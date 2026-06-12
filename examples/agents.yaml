@@ -1,0 +1,16 @@
+agents:
+  claude:
+    binary: claude
+    default_model: claude-sonnet-4-6
+    api_key_env: ANTHROPIC_API_KEY
+
+  opencode:
+    binary: opencode
+    default_model: openrouter/deepseek/deepseek-chat-v3-1
+    api_key_env: OPENROUTER_API_KEY
+
+  # Example: custom agent
+  # my-agent:
+  #   binary: /usr/local/bin/my-agent
+  #   default_model: gpt-4o
+  #   api_key_env: OPENAI_API_KEY

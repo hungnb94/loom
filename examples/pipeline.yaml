@@ -1,0 +1,82 @@
+entry: clarify
+
+steps:
+  clarify:
+    type: agent
+    agent: claude
+    tools: [Read, Glob, Grep]
+    prompt: |
+      Requirement: {{requirement}}
+
+      Read the codebase and identify:
+      1. Scope — which files need to change?
+      2. Dependencies — what needs to exist first?
+      3. Clarified requirement — rewrite clearly
+
+      Output format (exact):
+      SCOPE: [file list]
+      DEPENDS_ON: [none or description]
+      PASS: [clarified requirement]
+    pass_keyword: PASS
+    on_pass: plan
+    on_fail: clarify
+    max_visits: 2
+
+  plan:
+    type: agent
+    agent: claude
+    tools: [Read, Glob, Grep]
+    prompt: |
+      Requirement: {{clarify_output}}
+
+      Write a step-by-step implementation plan.
+      Reply: PASS: [numbered steps]
+    pass_keyword: PASS
+    next: execute
+
+  execute:
+    type: agent
+    agent: opencode
+    prompt: |
+      Implement the following plan exactly.
+      Plan: {{plan_output}}
+    next: verify
+
+  verify:
+    type: shell
+    commands:
+      - yarn build
+      - yarn test --ci
+      - yarn lint
+    on_pass: review
+    on_fail: fix_code
+    max_visits: 5
+
+  fix_code:
+    type: agent
+    agent: opencode
+    prompt: |
+      Fix the errors below. Only touch related files, do not refactor.
+
+      Errors:
+      {{verify_output}}
+    next: verify
+
+  review:
+    type: agent
+    agent: claude
+    tools: [Read, Glob, Grep]
+    prompt: |
+      Review the implementation for correctness, security, and code quality.
+      Reply PASS if acceptable, or FAIL: [specific issues with file:line references]
+    pass_keyword: PASS
+    on_pass: done
+    on_fail: fix_code
+
+  done:
+    type: agent
+    agent: claude
+    tools: [Read, Write]
+    prompt: |
+      Session complete. Summarize what was implemented and update TODO.md.
+    terminal: true
