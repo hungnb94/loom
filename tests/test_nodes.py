@@ -58,3 +58,98 @@ async def test_agent_node_fail():
     )
     success, output, state = await node.run({})
     assert success is False
+
+
+@pytest.mark.asyncio
+async def test_human_node():
+    from loom.nodes.human import HumanNode
+
+    node = HumanNode(
+        name="test",
+        config={
+            "prompt": "Approve?",
+            "on_approve": "done",
+            "on_decline": "retry",
+        },
+    )
+    node._user_input = "approve"
+    success, output, state = await node.run({})
+    assert success is True
+
+
+@pytest.mark.asyncio
+async def test_human_node_decline():
+    from loom.nodes.human import HumanNode
+
+    node = HumanNode(
+        name="test",
+        config={
+            "prompt": "Approve?",
+            "on_approve": "done",
+            "on_decline": "retry",
+        },
+    )
+    node._user_input = "decline"
+    success, output, state = await node.run({})
+    assert success is False
+
+
+@pytest.mark.asyncio
+async def test_condition_node_true():
+    from loom.nodes.condition import ConditionNode
+
+    node = ConditionNode(
+        name="test",
+        config={
+            "expression": "{{x}} > 5",
+            "on_true": "yes",
+            "on_false": "no",
+        },
+    )
+    success, output, state = await node.run({"x": 10})
+    assert success is True
+
+
+@pytest.mark.asyncio
+async def test_condition_node_false():
+    from loom.nodes.condition import ConditionNode
+
+    node = ConditionNode(
+        name="test",
+        config={
+            "expression": "{{x}} > 5",
+            "on_true": "yes",
+            "on_false": "no",
+        },
+    )
+    success, output, state = await node.run({"x": 3})
+    assert success is False
+
+
+@pytest.mark.asyncio
+async def test_subflow_node():
+    from loom.nodes.subflow import SubflowNode
+
+    node = SubflowNode(
+        name="test",
+        config={
+            "pipeline": "sub_pipeline.yaml",
+            "on_complete": "next_step",
+            "on_error": "retry",
+        },
+    )
+    success, output, state = await node.run({})
+    assert success is True
+    assert "sub_pipeline.yaml" in output
+
+
+@pytest.mark.asyncio
+async def test_subflow_node_no_pipeline():
+    from loom.nodes.subflow import SubflowNode
+
+    node = SubflowNode(
+        name="test",
+        config={"on_complete": "next_step", "on_error": "retry"},
+    )
+    success, output, state = await node.run({})
+    assert success is False
