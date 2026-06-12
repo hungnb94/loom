@@ -13,10 +13,14 @@ def load_agents(path: Path) -> dict:
     return config.get("agents", {})
 
 def validate_pipeline(config: dict) -> None:
+    if not isinstance(config, dict):
+        raise ValueError("pipeline config must be a dict")
     if "entry" not in config:
-        raise ValueError("pipeline.yaml must have 'entry' node")
+        raise ValueError("pipeline config must have 'entry' node")
     if "steps" not in config:
-        raise ValueError("pipeline.yaml must have 'steps' section")
+        raise ValueError("pipeline config must have 'steps' section")
+    if not isinstance(config["steps"], dict):
+        raise ValueError("pipeline config 'steps' must be a dict")
     for name, step in config["steps"].items():
         if "type" not in step:
             raise ValueError(f"Step '{name}' must have 'type'")
