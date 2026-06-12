@@ -32,3 +32,39 @@ async def test_executor_conditional_pass():
     state = PipelineState(current_node="check", visit_counts={}, shared_state={})
     final_state = await executor.run(state)
     assert final_state.current_node == "pass"
+
+
+@pytest.mark.asyncio
+async def test_full_pipeline():
+    """Integration test: agent → shell → shell through a full graph."""
+    config = {
+        "entry": "clarify",
+        "steps": {
+            "clarify": {
+                "type": "agent",
+                "agent": "echo",
+                "prompt": "PASS: clarified",
+                "pass_keyword": "PASS",
+                "on_pass": "execute",
+            },
+            "execute": {
+                "type": "shell",
+                "commands": ["echo done"],
+                "on_pass": "done",
+            },
+            "done": {
+                "type": "shell",
+                "commands": ["echo finished"],
+            },
+        }
+    }
+    executor = GraphExecutor(config)
+    state = PipelineState(
+        current_node="clarify",
+        visit_counts={},
+        shared_state={"requirement": "test"},
+    )
+    final_state = await executor.run(state)
+    assert final_state.current_node == "done"
+    assert "clarify_output" in final_state.shared_state
+    assert "execute_output" in final_state.shared_state
