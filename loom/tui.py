@@ -23,8 +23,13 @@ class LoomTUI:
         self.nodes[name] = status
 
     def update_streaming(self, name: str, output: str) -> None:
-        """Append streaming output for a node."""
-        self.streams[name] = self.streams.get(name, "") + output
+        """Append streaming output for a node, capped at max length."""
+        MAX_STREAM_LEN = 10000
+        current = self.streams.get(name, "")
+        combined = current + output
+        if len(combined) > MAX_STREAM_LEN:
+            combined = combined[-MAX_STREAM_LEN:]
+        self.streams[name] = combined
 
     def update_state(self, state: dict) -> None:
         """Update global pipeline state."""
@@ -35,6 +40,7 @@ class LoomTUI:
         table = Table(title="Loom Pipeline")
         table.add_column("Node", style="cyan")
         table.add_column("Status", style="green")
+        table.add_column("Output", style="dim")
 
         status_styles: dict[str, str] = {
             "pending": "yellow",
@@ -45,20 +51,13 @@ class LoomTUI:
 
         for name, status in self.nodes.items():
             style = status_styles.get(status, "white")
-            table.add_row(name, f"[{style}]{status}[/{style}]")
-
-        # Append streaming outputs as additional rows if any
-        if self.streams:
-            table.add_column("Output", style="dim")
-            for name, output in self.streams.items():
-                # Show last 80 chars of streaming output
-                tail = output[-80:] if len(output) > 80 else output
-                style = status_styles.get(self.nodes.get(name, ""), "white")
-                table.add_row(
-                    name,
-                    f"[{style}]{self.nodes.get(name, 'running')}[/{style}]",
-                    tail,
-                )
+            output = self.streams.get(name, "")
+            tail = output[-80:] if len(output) > 80 else output
+            table.add_row(
+                name,
+                f"[{style}]{status}[/{style}]",
+                tail,
+            )
 
         return Panel(table, title="Loom")
 
