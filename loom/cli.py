@@ -121,6 +121,52 @@ def status(
 
 
 @app.command()
+def output(
+    node: Optional[str] = typer.Argument(None, help="Node name to show output for (omit for all)"),
+    last: bool = typer.Option(False, "--last", "-l", help="Show only the last node's output"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """Show node outputs from the last pipeline run."""
+    state_path = Path("pipeline.state")
+    if not state_path.exists():
+        typer.echo("No pipeline.state found. Run a pipeline first.", err=True)
+        raise typer.Exit(1)
+
+    state = PipelineState.load(state_path)
+    shared = state.shared_state
+
+    outputs = {k: v for k, v in shared.items() if k.endswith("_output")}
+
+    if not outputs:
+        typer.echo("No node outputs found in state.", err=True)
+        raise typer.Exit(1)
+
+    if last:
+        # Find the last executed node from current_node
+        node_name = state.current_node
+        output_key = f"{node_name}_output"
+        if output_key in outputs:
+            outputs = {node_name: outputs[output_key]}
+        else:
+            typer.echo(f"No output found for node '{node_name}'", err=True)
+            raise typer.Exit(1)
+    elif node:
+        output_key = f"{node}_output"
+        if output_key not in outputs:
+            typer.echo(f"Node '{node}' not found. Available: {', '.join(k.replace('_output', '') for k in outputs)}", err=True)
+            raise typer.Exit(1)
+        outputs = {node: outputs[output_key]}
+
+    if json_output:
+        typer.echo(json.dumps(outputs, indent=2))
+    else:
+        for node_name, content in outputs.items():
+            typer.echo(f"── {node_name} ──")
+            typer.echo(content.rstrip())
+            typer.echo()
+
+
+@app.command()
 def validate(
     pipeline: str = typer.Option("pipeline.yaml", "--pipeline", "-p", help="Pipeline YAML file"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
