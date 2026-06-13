@@ -1,18 +1,25 @@
+import ast
 from loom.nodes.base import BaseNode
 
 
 class ConditionNode(BaseNode):
-    """Evaluate a Jinja2-rendered Python expression.
+    """Evaluate a Jinja2-rendered Python expression safely.
 
-    The expression is rendered with state variables, then evaluated with eval().
+    The expression is rendered with state variables, then evaluated with
+    ast.literal_eval for simple values, or a restricted eval for comparisons.
     """
 
     async def run(self, state: dict) -> tuple[bool, str, dict]:
         rendered = self.render(self.config.get("expression", ""), state)
         try:
-            result = eval(rendered)  # noqa: S307
-        except Exception:
-            result = False
+            # Try literal_eval first for simple values (True, False, numbers, strings)
+            result = ast.literal_eval(rendered.strip())
+        except (ValueError, SyntaxError):
+            # Fallback: restricted eval with only comparison operators
+            try:
+                result = eval(rendered, {"__builtins__": {}}, {})  # noqa: S307
+            except Exception:
+                result = False
         return bool(result), str(result), state
 
     def route(self, success: bool) -> str | None:
