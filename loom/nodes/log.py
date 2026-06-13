@@ -14,5 +14,7 @@ class LogNode(BaseNode):
 
     @staticmethod
     def _write_log(file_path: Path, message: str) -> None:
+        # Ensure parent directory exists to prevent FileNotFoundError
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "a", encoding="utf-8") as f:
             f.write(message + "\n")

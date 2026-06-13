@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from loom.nodes.base import BaseNode
 
 
@@ -21,6 +22,7 @@ class ShellNode(BaseNode):
                         cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.PIPE,
+                        cwd=Path.cwd(),
                     ),
                     timeout=timeout,
                 )
