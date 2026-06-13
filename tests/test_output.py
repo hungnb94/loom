@@ -9,7 +9,7 @@ import json
 
 def _run_pipeline(node=None, state=None):
     """Helper: run test pipeline, return final shared_state."""
-    config = load_pipeline(Path("test_full_pipeline.yaml"))
+    config = load_pipeline(Path("test_output_pipeline.yaml"))
     executor = GraphExecutor(config)
     if state is None:
         state = PipelineState(current_node=config["entry"], visit_counts={}, shared_state={"requirement": "test"})

@@ -1,6 +1,7 @@
 from pathlib import Path
 from loom.config import load_agents
 
+
 class AgentAdapter:
     def __init__(self, agents_path: Path):
         self.agents = load_agents(agents_path)
@@ -11,7 +12,7 @@ class AgentAdapter:
         agent = self.agents[agent_name]
         binary = agent["binary"]
         cmd = [binary]
-        
+
         # Hermes CLI uses 'chat -q' for non-interactive mode
         if binary == "hermes" or binary.endswith("/hermes"):
             cmd.extend(["chat", "-q", prompt])
@@ -24,7 +25,7 @@ class AgentAdapter:
             if "default_model" in agent:
                 cmd.extend(["--model", agent["default_model"]])
             cmd.extend(["--prompt", prompt])
-        
+
         return cmd
 
     def list_agents(self) -> list[str]:

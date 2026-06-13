@@ -54,10 +54,7 @@ class HumanNode(BaseNode):
         # Build context message
         default_msg = f"🔔 Pipeline cần approve\n\nNode: `{self.name}`\nReply: **approve** hoặc **decline**"
         msg = self.config.get("message", default_msg)
-        # Render Jinja2 if needed
-        if "{{" in msg or "{%" in msg:
-            from jinja2 import Template
-            msg = Template(msg).render(**state)
+        msg = self.render(msg, state)
 
         # Send
         try:

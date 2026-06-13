@@ -1,11 +1,13 @@
-import typer
+import asyncio
 import json
 import sys
 from pathlib import Path
 from typing import Optional
+
+import typer
 from loom.executor import GraphExecutor
 from loom.state import PipelineState
-from loom.config import load_pipeline
+from loom.config import load_pipeline, validate_pipeline
 from loom.tui import LoomTUI
 
 app = typer.Typer(help="Loom -- Graph-based AI agent pipeline orchestrator")
@@ -13,7 +15,7 @@ app = typer.Typer(help="Loom -- Graph-based AI agent pipeline orchestrator")
 
 def _resolve_option(value, fallback):
     """Resolve typer.Option value — handles both runtime values and OptionInfo objects."""
-    if isinstance(value, str) or isinstance(value, bool) or value is None:
+    if isinstance(value, (str, bool)) or value is None:
         return value
     # OptionInfo object from typer.testing.CliRunner
     return getattr(value, "default", fallback)
@@ -74,7 +76,6 @@ def run(
         if debug:
             tui.update_state(state.shared_state)
 
-    import asyncio
     try:
         final_state = asyncio.run(executor.run(state, tui=tui, quiet=quiet))
     except RuntimeError as e:
@@ -130,7 +131,6 @@ def graph(
         typer.echo(f"Error: {pipeline_path} not found", err=True)
         raise typer.Exit(1)
 
-    from loom.config import load_pipeline
     from loom.graph import render_graph
 
     config = load_pipeline(pipeline_path)
@@ -196,7 +196,6 @@ def validate(
         raise typer.Exit(1)
 
     try:
-        from loom.config import validate_pipeline
         import yaml
 
         with open(pipeline_path) as f:

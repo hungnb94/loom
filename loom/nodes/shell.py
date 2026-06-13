@@ -30,7 +30,7 @@ class ShellNode(BaseNode):
                 outputs.append(f"Command timed out after {timeout}s: {cmd}")
                 return False, "\n".join(outputs), state
             stdout, stderr = await proc.communicate()
-            outputs.append(stdout.decode() + stderr.decode())
+            outputs.append(stdout.decode("utf-8", errors="replace") + stderr.decode("utf-8", errors="replace"))
             if proc.returncode != 0:
                 return False, "\n".join(outputs), state
         return True, "\n".join(outputs), state

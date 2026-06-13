@@ -138,3 +138,21 @@ def test_subflow_node_valid():
     validate_pipeline({"entry": "a", "steps": {
         "a": {"type": "subflow", "pipeline": "other.yaml"},
     }})
+
+
+def test_human_node_on_timeout_valid():
+    """on_timeout edge should be validated like other edge keys."""
+    validate_pipeline({"entry": "a", "steps": {
+        "a": {"type": "human", "on_approve": "b", "on_timeout": "c"},
+        "b": {"type": "shell", "commands": ["echo ok"]},
+        "c": {"type": "shell", "commands": ["echo timeout"]},
+    }})
+
+
+def test_on_timeout_references_nonexistent():
+    """on_timeout referencing a non-existent node should fail validation."""
+    with pytest.raises(ValueError, match="references non-existent node"):
+        validate_pipeline({"entry": "a", "steps": {
+            "a": {"type": "human", "on_approve": "b", "on_timeout": "ghost"},
+            "b": {"type": "shell", "commands": ["echo ok"]},
+        }})

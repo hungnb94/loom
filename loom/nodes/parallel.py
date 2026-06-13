@@ -47,7 +47,12 @@ class ParallelNode(BaseNode):
             outputs.append(f"{name}: {'PASS' if success else 'FAIL'} — {output[:200]}")
             updated_state[f"{name}_output"] = output
             for key, value in branch_state.items():
-                if key not in updated_state:
+                if key == f"{name}_output":
+                    # Branch's own output always wins
+                    updated_state[key] = value
+                elif key not in updated_state:
+                    # First-write wins for shared keys (concurrent branches
+                    # each get a copy of parent state, so conflicts are rare)
                     updated_state[key] = value
 
         return all_passed, "\n".join(outputs), updated_state

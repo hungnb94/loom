@@ -1,12 +1,17 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 
 EDGE_KEYS = [
     ("on_pass", "✓"), ("on_fail", "✗"),
     ("on_true", "T"), ("on_false", "F"),
     ("on_approve", "✓"), ("on_decline", "✗"),
+    ("on_timeout", "⏱"),
     ("on_complete", "→"), ("on_error", "✗"),
+    ("on_skip", "⊘"),
     ("next", "→"),
 ]
+
+# Canonical set of all edge key names (for validation / traversal)
+EDGE_KEY_NAMES = [key for key, _ in EDGE_KEYS]
 
 TYPE_ICONS = {
     "shell": "⚙",
@@ -49,9 +54,9 @@ def render_graph(config: dict) -> str:
     # Topological sort (BFS) — handles cycles via visited set
     visited = []
     seen = set()
-    queue = [entry]
+    queue = deque([entry])
     while queue:
-        node = queue.pop(0)
+        node = queue.popleft()
         if node in seen or node not in steps:
             continue
         seen.add(node)

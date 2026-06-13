@@ -2,6 +2,8 @@ from pathlib import Path
 from jinja2 import Template, TemplateSyntaxError
 import yaml
 
+from loom.graph import EDGE_KEY_NAMES
+
 VALID_TYPES = {"agent", "shell", "human", "condition", "subflow", "log", "parallel"}
 
 
@@ -57,11 +59,7 @@ def validate_pipeline(config: dict) -> None:
             continue
 
         # Edge references
-        edge_keys = [
-            "on_pass", "on_fail", "on_true", "on_false", "next",
-            "on_complete", "on_error", "on_approve", "on_decline", "on_skip",
-        ]
-        for key in edge_keys:
+        for key in EDGE_KEY_NAMES:
             target = step.get(key)
             if target and target not in all_nodes:
                 errors.append(f"step '{name}': {key}='{target}' references non-existent node")
@@ -112,8 +110,7 @@ def validate_pipeline(config: dict) -> None:
                 continue
             reachable.add(current)
             step = steps.get(current, {})
-            for key in ("on_pass", "on_fail", "on_true", "on_false", "next",
-                        "on_complete", "on_error", "on_approve", "on_decline"):
+            for key in EDGE_KEY_NAMES:
                 target = step.get(key)
                 if target and target in all_nodes:
                     queue.append(target)

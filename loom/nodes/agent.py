@@ -3,12 +3,14 @@ from pathlib import Path
 from loom.nodes.base import BaseNode
 from loom.agents import AgentAdapter
 
+# Module-level cache for AgentAdapter — avoids class-mutable-state antipattern.
+# Invalidated by mtime check on agents.yaml.
+_adapter_cache: AgentAdapter | None = None
+_agents_path_mtime: float | None = None
+
 
 class AgentNode(BaseNode):
     """Spawn an agent subprocess and evaluate its output for pass/fail."""
-
-    _adapter_cache: AgentAdapter | None = None
-    _agents_path_mtime: float | None = None
 
     async def run(self, state: dict) -> tuple[bool, str, dict]:
         prompt = self.render(self.config.get("prompt", ""), state)
@@ -25,21 +27,23 @@ class AgentNode(BaseNode):
             stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
-        output = stdout.decode() + stderr.decode()
+        output = stdout.decode("utf-8", errors="replace") + stderr.decode("utf-8", errors="replace")
         return pass_keyword in output, output, state
 
     @classmethod
     def _resolve_cmd(cls, agents_path: Path, agent_name: str, prompt: str) -> list[str]:
+        global _adapter_cache, _agents_path_mtime
+
         if not agents_path.exists():
             return [agent_name, prompt]
 
         # Check mtime for cache invalidation
         mtime = agents_path.stat().st_mtime
-        if cls._adapter_cache is None or cls._agents_path_mtime != mtime:
-            cls._adapter_cache = AgentAdapter(agents_path)
-            cls._agents_path_mtime = mtime
+        if _adapter_cache is None or _agents_path_mtime != mtime:
+            _adapter_cache = AgentAdapter(agents_path)
+            _agents_path_mtime = mtime
 
         try:
-            return cls._adapter_cache.resolve(agent_name, prompt)
+            return _adapter_cache.resolve(agent_name, prompt)
         except ValueError:
             return [agent_name, prompt]

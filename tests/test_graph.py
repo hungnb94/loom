@@ -134,3 +134,18 @@ class TestRenderGraph:
         assert "setup" in result
         assert "done" in result
         assert len(result.split("\n")) >= 5  # Multi-line output
+
+    def test_on_timeout_edge(self):
+        """on_timeout should appear in rendered graph."""
+        config = {
+            "entry": "a",
+            "steps": {
+                "a": {"type": "human", "on_approve": "b", "on_timeout": "c"},
+                "b": {"type": "shell", "commands": ["echo ok"]},
+                "c": {"type": "shell", "commands": ["echo timeout"]},
+            },
+        }
+        edges = build_edges(config)
+        assert ("a", "c", "⏱") in edges
+        result = render_graph(config)
+        assert "⏱" in result

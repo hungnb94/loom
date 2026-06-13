@@ -10,7 +10,7 @@ class PipelineState:
     shared_state: dict[str, Any]
 
     def save(self, path: Path) -> None:
-        path.write_text(json.dumps(asdict(self), indent=2), encoding="utf-8")
+        path.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False), encoding="utf-8")
 
     @classmethod
     def load(cls, path: Path) -> "PipelineState":

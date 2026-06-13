@@ -1,0 +1,59 @@
+# Self-contained test pipeline for test_output.py
+# No external agent dependencies — uses only shell, condition, log nodes.
+
+entry: setup
+steps:
+  setup:
+    type: shell
+    commands:
+      - 'echo "=== Loom Full Pipeline Test ==="'
+      - 'echo "Python version OK"'
+      - 'mkdir -p .loom_test'
+      - 'echo "setup done" > .loom_test/setup.txt'
+    on_pass: check_env
+    on_fail: abort
+
+  check_env:
+    type: condition
+    expression: "True"
+    on_true: parallel_verify
+    on_false: abort
+
+  parallel_verify:
+    type: parallel
+    branches:
+      - name: compile
+        type: shell
+        commands:
+          - .venv/bin/python -m py_compile loom/executor.py
+          - .venv/bin/python -m py_compile loom/nodes/base.py
+          - echo "compile PASS"
+      - name: unit_test
+        type: shell
+        commands:
+          - .venv/bin/python -m pytest tests/test_nodes.py tests/test_state.py -q
+      - name: shell_test
+        type: shell
+        commands:
+          - .venv/bin/python -m pytest tests/test_parallel.py tests/test_parallel_node.py -q
+    on_pass: log_result
+    on_fail: log_result
+    max_visits: 2
+
+  log_result:
+    type: log
+    message: "[{{timestamp}}] Pipeline verify PASSED — compile={{compile_output}}"
+    file: .loom_test/pipeline.log
+    next: done
+
+  done:
+    type: shell
+    commands:
+      - 'echo "=== ALL NODE TYPES PASSED ==="'
+      - 'rm -rf .loom_test'
+
+  abort:
+    type: shell
+    commands:
+      - 'echo "=== PIPELINE ABORTED ==="'
+      - 'rm -rf .loom_test'

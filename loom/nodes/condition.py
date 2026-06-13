@@ -48,7 +48,7 @@ class ConditionNode(BaseNode):
             # Fallback: restricted AST evaluation — no eval() call
             try:
                 result = self._safe_eval(rendered.strip())
-            except Exception:
+            except _SafeEvalError:
                 result = False
         return bool(result), str(result), state
 

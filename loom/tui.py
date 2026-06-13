@@ -22,13 +22,14 @@ class LoomTUI:
         """Update the status of a pipeline node."""
         self.nodes[name] = status
 
+    MAX_STREAM_LEN = 10000
+
     def update_streaming(self, name: str, output: str) -> None:
         """Append streaming output for a node, capped at max length."""
-        MAX_STREAM_LEN = 10000
         current = self.streams.get(name, "")
         combined = current + output
-        if len(combined) > MAX_STREAM_LEN:
-            combined = combined[-MAX_STREAM_LEN:]
+        if len(combined) > self.MAX_STREAM_LEN:
+            combined = combined[-self.MAX_STREAM_LEN:]
         self.streams[name] = combined
 
     def update_state(self, state: dict) -> None:
@@ -61,10 +62,14 @@ class LoomTUI:
 
         return Panel(table, title="Loom")
 
-    def run_live(self) -> None:
+    def run_live(self, refresh_per_second: int = 4) -> None:
         """Run a live-updating TUI display (blocks until interrupted)."""
-        with Live(self.render(), console=self.console, refresh_per_second=4) as live:
-            while True:
-                live.update(self.render())
-                # In real implementation, this would be event-driven
-                break
+        with Live(self.render(), console=self.console,
+                  refresh_per_second=refresh_per_second) as live:
+            try:
+                while True:
+                    live.update(self.render())
+                    import time
+                    time.sleep(1.0 / refresh_per_second)
+            except KeyboardInterrupt:
+                pass
