@@ -64,12 +64,12 @@ class LoomTUI:
 
     def run_live(self, refresh_per_second: int = 4) -> None:
         """Run a live-updating TUI display (blocks until interrupted)."""
+        import time
         with Live(self.render(), console=self.console,
                   refresh_per_second=refresh_per_second) as live:
             try:
                 while True:
                     live.update(self.render())
-                    import time
                     time.sleep(1.0 / refresh_per_second)
             except KeyboardInterrupt:
                 pass

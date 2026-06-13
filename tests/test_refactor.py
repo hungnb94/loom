@@ -120,8 +120,8 @@ async def test_executor_extracted_methods():
     assert isinstance(node, ShellNode)
     
     # _check_max_visits should work
-    assert executor._check_max_visits("start", {}) is True
-    assert executor._check_max_visits("start", {"start": 5}) is True  # default no limit
+    executor._check_max_visits("start", {})  # no limit → no error
+    executor._check_max_visits("start", {"start": 5})  # no limit → no error
     
     # Full run still works
     final_state = await executor.run(state, quiet=True)

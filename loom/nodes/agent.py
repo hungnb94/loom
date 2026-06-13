@@ -21,12 +21,18 @@ class AgentNode(BaseNode):
         agents_path = Path.home() / ".loom" / "agents.yaml"
         cmd = self._resolve_cmd(agents_path, agent_name, prompt)
 
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await proc.communicate()
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+        except FileNotFoundError as exc:
+            # Agent binary not found — surface clearly
+            err_msg = f"Agent binary not found: {exc.filename}"
+            return False, err_msg, state
+
         output = stdout.decode("utf-8", errors="replace") + stderr.decode("utf-8", errors="replace")
         return pass_keyword in output, output, state
 

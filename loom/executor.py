@@ -21,11 +21,12 @@ NODE_REGISTRY = {
 
 
 class GraphExecutor:
-    def __init__(self, config: dict, agents_path: Path | None = None):
+    def __init__(self, config: dict, agents_path: Path | None = None, state_path: Path | None = None):
         self.config = config
         self.entry = config["entry"]
         self.steps = config["steps"]
         self.agents_path = agents_path
+        self._state_path = state_path or Path("pipeline.state")
 
     def _create_node(self, name: str):
         step_config = self.steps[name]
@@ -34,15 +35,16 @@ class GraphExecutor:
             raise ValueError(f"Unknown node type: {step_config['type']}")
         return node_class(name=name, config=step_config)
 
-    def _check_max_visits(self, node: str, visit_counts: dict) -> bool:
+    def _check_max_visits(self, node: str, visit_counts: dict) -> None:
         max_visits = self.steps[node].get("max_visits")
+        if max_visits is None:
+            return
         visits = visit_counts.get(node, 0)
-        if max_visits is not None and visits > max_visits:
+        if visits > max_visits:
             raise RuntimeError(f"Max visits exceeded for node: {node}")
-        return True
 
     async def _persist_state(self, state: PipelineState):
-        await asyncio.to_thread(state.save, Path("pipeline.state"))
+        await asyncio.to_thread(state.save, self._state_path)
 
     def _update_tui(self, tui, node: str, status: str, output: str = ""):
         if tui is None:
