@@ -121,6 +121,23 @@ def status(
 
 
 @app.command()
+def graph(
+    pipeline: str = typer.Option("pipeline.yaml", "--pipeline", "-p", help="Pipeline YAML file"),
+):
+    """Visualize pipeline as ASCII graph."""
+    pipeline_path = Path(_resolve_option(pipeline, "pipeline.yaml"))
+    if not pipeline_path.exists():
+        typer.echo(f"Error: {pipeline_path} not found", err=True)
+        raise typer.Exit(1)
+
+    from loom.config import load_pipeline
+    from loom.graph import render_graph
+
+    config = load_pipeline(pipeline_path)
+    typer.echo(render_graph(config))
+
+
+@app.command()
 def output(
     node: Optional[str] = typer.Argument(None, help="Node name to show output for (omit for all)"),
     last: bool = typer.Option(False, "--last", "-l", help="Show only the last node's output"),
