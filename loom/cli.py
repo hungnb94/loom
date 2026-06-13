@@ -11,13 +11,20 @@ app = typer.Typer(help="Loom -- Graph-based AI agent pipeline orchestrator")
 @app.command()
 def main(
     requirement: str = typer.Option(None, "--requirement", "-r", help="Requirement string"),
+    pipeline: str = typer.Option("pipeline.yaml", "--pipeline", "-p", help="Pipeline YAML file"),
     resume: bool = typer.Option(False, "--resume", help="Resume from pipeline.state"),
     debug: bool = typer.Option(False, "--debug", help="Show debug state panel"),
 ):
     """Loom -- Graph-based AI agent pipeline orchestrator."""
-    pipeline_path = Path("pipeline.yaml")
+    # typer passes the actual value at runtime, but OptionInfo object in tests
+    # We need to handle both cases
+    if isinstance(pipeline, str):
+        pipeline_path = Path(pipeline)
+    else:
+        # It's an OptionInfo object (typer.testing.CliRunner without invoke)
+        pipeline_path = Path(getattr(pipeline, "default", "pipeline.yaml"))
     if not pipeline_path.exists():
-        typer.echo("Error: pipeline.yaml not found", err=True)
+        typer.echo(f"Error: {pipeline_path} not found", err=True)
         raise typer.Exit(1)
 
     config = load_pipeline(pipeline_path)

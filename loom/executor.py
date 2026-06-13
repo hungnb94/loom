@@ -5,6 +5,7 @@ from loom.nodes.agent import AgentNode
 from loom.nodes.human import HumanNode
 from loom.nodes.condition import ConditionNode
 from loom.nodes.subflow import SubflowNode
+from loom.nodes.log import LogNode
 
 NODE_REGISTRY = {
     "agent": AgentNode,
@@ -12,6 +13,7 @@ NODE_REGISTRY = {
     "human": HumanNode,
     "condition": ConditionNode,
     "subflow": SubflowNode,
+    "log": LogNode,
 }
 
 
@@ -39,7 +41,7 @@ class GraphExecutor:
             # Check max_visits
             max_visits = self.steps[current].get("max_visits")
             visit_counts[current] = visit_counts.get(current, 0) + 1
-            if max_visits and visit_counts[current] > max_visits:
+            if max_visits is not None and visit_counts[current] > max_visits:
                 raise RuntimeError(f"Max visits exceeded for node: {current}")
 
             # Create and run node
