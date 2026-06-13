@@ -6,6 +6,7 @@ from loom.nodes.human import HumanNode
 from loom.nodes.condition import ConditionNode
 from loom.nodes.subflow import SubflowNode
 from loom.nodes.log import LogNode
+from loom.nodes.parallel import ParallelNode
 
 NODE_REGISTRY = {
     "agent": AgentNode,
@@ -14,6 +15,7 @@ NODE_REGISTRY = {
     "condition": ConditionNode,
     "subflow": SubflowNode,
     "log": LogNode,
+    "parallel": ParallelNode,
 }
 
 
@@ -26,11 +28,27 @@ class GraphExecutor:
 
     def _create_node(self, name: str):
         step_config = self.steps[name]
-        node_type = step_config["type"]
-        node_class = NODE_REGISTRY.get(node_type)
+        node_class = NODE_REGISTRY.get(step_config["type"])
         if not node_class:
-            raise ValueError(f"Unknown node type: {node_type}")
+            raise ValueError(f"Unknown node type: {step_config['type']}")
         return node_class(name=name, config=step_config)
+
+    def _check_max_visits(self, node: str, visit_counts: dict) -> bool:
+        max_visits = self.steps[node].get("max_visits")
+        visits = visit_counts.get(node, 0)
+        if max_visits is not None and visits > max_visits:
+            raise RuntimeError(f"Max visits exceeded for node: {node}")
+        return True
+
+    def _persist_state(self, state: PipelineState):
+        state.save(Path("pipeline.state"))
+
+    def _update_tui(self, tui, node: str, status: str, output: str = ""):
+        if tui is None:
+            return
+        tui.update_node_status(node, status)
+        if output:
+            tui.update_streaming(node, output)
 
     async def run(self, state: PipelineState, tui=None, quiet: bool = False) -> PipelineState:
         current = state.current_node or self.entry
@@ -38,41 +56,30 @@ class GraphExecutor:
         shared_state = dict(state.shared_state)
 
         while current:
-            # Check max_visits
-            max_visits = self.steps[current].get("max_visits")
             visit_counts[current] = visit_counts.get(current, 0) + 1
-            if max_visits is not None and visit_counts[current] > max_visits:
-                raise RuntimeError(f"Max visits exceeded for node: {current}")
+            self._check_max_visits(current, visit_counts)
 
-            # Update TUI
-            if tui is not None:
-                tui.update_node_status(current, "running")
-
+            self._update_tui(tui, current, "running")
             if not quiet:
                 print(f"[Loom] Running node: {current}", flush=True)
 
-            # Create and run node
+            # Run node
             node = self._create_node(current)
             success, output, shared_state = await node.run(shared_state)
             shared_state[f"{current}_output"] = output
 
             if not quiet:
-                status = "PASS" if success else "FAIL"
-                print(f"[Loom] Node {current}: {status}", flush=True)
+                print(f"[Loom] Node {current}: {'PASS' if success else 'FAIL'}", flush=True)
+            self._update_tui(tui, current, "completed" if success else "failed", output)
 
-            if tui is not None:
-                tui.update_node_status(current, "completed" if success else "failed")
-                tui.update_streaming(current, output)
-
-            # Persist state before moving to next node
+            # Persist and route
             state = PipelineState(
                 current_node=current,
                 visit_counts=visit_counts,
                 shared_state=shared_state,
             )
-            state.save(Path("pipeline.state"))
+            self._persist_state(state)
 
-            # Determine next node
             next_node = node.route(success)
             if not next_node:
                 break

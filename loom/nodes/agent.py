@@ -1,7 +1,5 @@
 import asyncio
-import os
 from pathlib import Path
-from jinja2 import Template
 from loom.nodes.base import BaseNode
 from loom.agents import AgentAdapter
 
@@ -9,12 +7,8 @@ from loom.agents import AgentAdapter
 class AgentNode(BaseNode):
     """Spawn an agent subprocess and evaluate its output for pass/fail."""
 
-    async def run(self, state):
-        # Render prompt with Jinja2 templating
-        prompt_template = self.config.get("prompt", "")
-        template = Template(prompt_template)
-        prompt = template.render(**state)
-
+    async def run(self, state: dict) -> tuple[bool, str, dict]:
+        prompt = self.render(self.config.get("prompt", ""), state)
         agent_name = self.config.get("agent", "echo")
         pass_keyword = self.config.get("pass_keyword", "PASS")
 
@@ -25,7 +19,6 @@ class AgentNode(BaseNode):
             try:
                 cmd = adapter.resolve(agent_name, prompt)
             except ValueError:
-                # Fallback: use agent name as direct binary
                 cmd = [agent_name, prompt]
         else:
             cmd = [agent_name, prompt]
@@ -37,5 +30,4 @@ class AgentNode(BaseNode):
         )
         stdout, stderr = await proc.communicate()
         output = stdout.decode() + stderr.decode()
-        success = pass_keyword in output
-        return success, output, state
+        return pass_keyword in output, output, state

@@ -1,22 +1,16 @@
-from jinja2 import Template
-
 from loom.nodes.base import BaseNode
 
 
 class ConditionNode(BaseNode):
-    """A node that evaluates a Jinja2-rendered Python expression.
+    """Evaluate a Jinja2-rendered Python expression.
 
-    The expression is first rendered with Jinja2 (substituting state variables),
-    then evaluated with Python eval(). This lets pipeline authors write
-    conditions like ``{{x}} > 5`` or ``{{status}} == "ready"``.
+    The expression is rendered with state variables, then evaluated with eval().
     """
 
-    async def run(self, state: dict):
-        expression = self.config.get("expression", "")
-        template = Template(expression)
-        rendered = template.render(**state)
+    async def run(self, state: dict) -> tuple[bool, str, dict]:
+        rendered = self.render(self.config.get("expression", ""), state)
         try:
-            result = eval(rendered)  # noqa: S307 — deliberate: controlled pipeline expressions
+            result = eval(rendered)  # noqa: S307
         except Exception:
             result = False
         return bool(result), str(result), state

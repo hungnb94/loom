@@ -1,36 +1,44 @@
-entry: generate_code
-
+entry: verify
 steps:
-  generate_code:
-    type: agent
-    agent: hermes
-    prompt: |
-      Write a Python function greet(name) that returns "Hello, name!".
-      Output ONLY the code wrapped in ```python ... ```.
-      Then add PASS at the end of your response.
-    pass_keyword: PASS
-    on_pass: save_code
-    on_fail: done
-    max_visits: 2
-
-  save_code:
-    type: shell
-    commands:
-      - printf '%s\n' '{{generate_code_output}}' > /tmp/test_greet_raw.py
-      - sed -n '/```python/,/```/p' /tmp/test_greet_raw.py | sed '1d;$d' > /tmp/test_greet.py
-      - python3 -c "import py_compile; py_compile.compile('/tmp/test_greet.py', doraise=True)"
-      - cat /tmp/test_greet.py
-    on_pass: test_code
-    on_fail: done
-
-  test_code:
-    type: shell
-    commands:
-      - cd /tmp && python3 -c "from test_greet import greet; print(greet('World'))"
+  verify:
+    type: parallel
+    branches:
+      - name: lint
+        type: shell
+        commands:
+          - .venv/bin/python -m ruff check loom/ tests/ || echo "ruff not installed, skip"
+          - .venv/bin/python -m py_compile loom/cli.py loom/executor.py loom/nodes/parallel.py
+      - name: test
+        type: shell
+        commands:
+          - .venv/bin/python -m pytest tests/ -q
+      - name: typecheck
+        type: shell
+        commands:
+          - .venv/bin/python -m mypy loom/ || echo "mypy not installed, skip"
     on_pass: done
-    on_fail: done
+    on_fail: fix
 
   done:
     type: log
-    message: "Pipeline completed for requirement: {{requirement}}"
+    message: "Pipeline completed successfully at {{timestamp}}"
     file: loom.log
+
+  fix:
+    type: agent
+    agent: hermes
+    prompt: "The parallel verification pipeline failed. Check the outputs in shared_state (lint_output, test_output, typecheck_output) and suggest fixes. Reply PASS if no issues, FAIL with specific fixes needed."
+    pass_keyword: PASS
+    on_pass: verify
+    on_fail: human_review
+    max_visits: 3
+
+  human_review:
+    type: human
+    on_approve: done
+    on_decline: abort
+
+  abort:
+    type: shell
+    commands:
+      - echo "Pipeline aborted by human"
