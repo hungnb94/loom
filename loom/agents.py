@@ -9,10 +9,23 @@ class AgentAdapter:
         if agent_name not in self.agents:
             raise ValueError(f"Agent '{agent_name}' not found in agents.yaml")
         agent = self.agents[agent_name]
-        cmd = [agent["binary"]]
-        if "default_model" in agent:
-            cmd.extend(["--model", agent["default_model"]])
-        # Some agents accept prompt via stdin, others via --prompt
-        # For now, append as positional arg
-        cmd.append(prompt)
+        binary = agent["binary"]
+        cmd = [binary]
+        
+        # Hermes CLI uses 'chat -q' for non-interactive mode
+        if binary == "hermes" or binary.endswith("/hermes"):
+            cmd.extend(["chat", "-q", prompt])
+            if "default_model" in agent:
+                cmd.extend(["-m", agent["default_model"]])
+            # Quiet mode for programmatic use + limit turns
+            cmd.extend(["-Q", "--max-turns", "1"])
+        else:
+            # Generic agent support
+            if "default_model" in agent:
+                cmd.extend(["--model", agent["default_model"]])
+            cmd.extend(["--prompt", prompt])
+        
         return cmd
+
+    def list_agents(self) -> list[str]:
+        return list(self.agents.keys())

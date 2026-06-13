@@ -1,0 +1,36 @@
+entry: generate_code
+
+steps:
+  generate_code:
+    type: agent
+    agent: hermes
+    prompt: |
+      Write a Python function greet(name) that returns "Hello, name!".
+      Output ONLY the code wrapped in ```python ... ```.
+      Then add PASS at the end of your response.
+    pass_keyword: PASS
+    on_pass: save_code
+    on_fail: done
+    max_visits: 2
+
+  save_code:
+    type: shell
+    commands:
+      - printf '%s\n' '{{generate_code_output}}' > /tmp/test_greet_raw.py
+      - sed -n '/```python/,/```/p' /tmp/test_greet_raw.py | sed '1d;$d' > /tmp/test_greet.py
+      - python3 -c "import py_compile; py_compile.compile('/tmp/test_greet.py', doraise=True)"
+      - cat /tmp/test_greet.py
+    on_pass: test_code
+    on_fail: done
+
+  test_code:
+    type: shell
+    commands:
+      - cd /tmp && python3 -c "from test_greet import greet; print(greet('World'))"
+    on_pass: done
+    on_fail: done
+
+  done:
+    type: log
+    message: "Pipeline completed for requirement: {{requirement}}"
+    file: loom.log

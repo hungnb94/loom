@@ -7,3 +7,41 @@ def test_cli_help():
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "Loom" in result.output
+
+def test_cli_run_missing_requirement():
+    """Non-interactive mode should fail when requirement is missing."""
+    result = runner.invoke(app, ["run"], catch_exceptions=False)
+    assert result.exit_code == 1
+    assert "requirement is required" in result.output
+
+def test_cli_run_with_requirement():
+    """Run with requirement should work."""
+    result = runner.invoke(app, ["run", "test requirement"], catch_exceptions=False)
+    # Should fail because pipeline.yaml not found, not because of missing requirement
+    assert "pipeline.yaml not found" in result.output or result.exit_code == 1
+
+def test_cli_status_no_state():
+    """Status should fail when no pipeline.state exists."""
+    import os
+    if os.path.exists("pipeline.state"):
+        os.remove("pipeline.state")
+    result = runner.invoke(app, ["status"])
+    assert result.exit_code == 1
+    assert "No active pipeline" in result.output
+
+def test_cli_agents_no_config():
+    """Agents should fail when no agents.yaml exists."""
+    import os
+    agents_path = os.path.expanduser("~/.loom/agents.yaml")
+    # Temporarily rename if exists
+    backup = None
+    if os.path.exists(agents_path):
+        backup = agents_path + ".backup"
+        os.rename(agents_path, backup)
+    try:
+        result = runner.invoke(app, ["agents"])
+        assert result.exit_code == 1
+        assert "No agents.yaml" in result.output
+    finally:
+        if backup and os.path.exists(backup):
+            os.rename(backup, agents_path)

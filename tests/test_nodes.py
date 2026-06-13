@@ -26,6 +26,19 @@ async def test_shell_node_failure():
 
 
 @pytest.mark.asyncio
+async def test_shell_node_jinja2_template():
+    """ShellNode should render Jinja2 templates in commands."""
+    from loom.nodes.shell import ShellNode
+    node = ShellNode(
+        name="test",
+        config={"commands": ["echo {{message}}"], "on_pass": "done"},
+    )
+    success, output, state = await node.run({"message": "hello world"})
+    assert success is True
+    assert "hello world" in output
+
+
+@pytest.mark.asyncio
 async def test_agent_node_pass():
     from loom.nodes.agent import AgentNode
 
@@ -58,6 +71,26 @@ async def test_agent_node_fail():
     )
     success, output, state = await node.run({})
     assert success is False
+
+
+@pytest.mark.asyncio
+async def test_agent_node_jinja2_template():
+    """AgentNode should render Jinja2 templates in prompts."""
+    from loom.nodes.agent import AgentNode
+
+    node = AgentNode(
+        name="test",
+        config={
+            "agent": "echo",
+            "prompt": "Requirement: {{requirement}} - PASS",
+            "pass_keyword": "PASS",
+            "on_pass": "done",
+        },
+    )
+    success, output, state = await node.run({"requirement": "fix bug"})
+    assert success is True
+    assert "fix bug" in output
+    assert "Requirement: fix bug" in output
 
 
 @pytest.mark.asyncio

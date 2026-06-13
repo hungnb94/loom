@@ -32,7 +32,7 @@ class GraphExecutor:
             raise ValueError(f"Unknown node type: {node_type}")
         return node_class(name=name, config=step_config)
 
-    async def run(self, state: PipelineState) -> PipelineState:
+    async def run(self, state: PipelineState, tui=None, quiet: bool = False) -> PipelineState:
         current = state.current_node or self.entry
         visit_counts = dict(state.visit_counts)
         shared_state = dict(state.shared_state)
@@ -44,10 +44,25 @@ class GraphExecutor:
             if max_visits is not None and visit_counts[current] > max_visits:
                 raise RuntimeError(f"Max visits exceeded for node: {current}")
 
+            # Update TUI
+            if tui is not None:
+                tui.update_node_status(current, "running")
+
+            if not quiet:
+                print(f"[Loom] Running node: {current}", flush=True)
+
             # Create and run node
             node = self._create_node(current)
             success, output, shared_state = await node.run(shared_state)
             shared_state[f"{current}_output"] = output
+
+            if not quiet:
+                status = "PASS" if success else "FAIL"
+                print(f"[Loom] Node {current}: {status}", flush=True)
+
+            if tui is not None:
+                tui.update_node_status(current, "completed" if success else "failed")
+                tui.update_streaming(current, output)
 
             # Persist state before moving to next node
             state = PipelineState(
