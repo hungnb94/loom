@@ -1,0 +1,18 @@
+# Edge case: shell fail → on_fail routing
+entry: might_fail
+steps:
+  might_fail:
+    type: shell
+    commands:
+      - 'exit 1'
+    on_pass: done
+    on_fail: error_handler
+  error_handler:
+    type: shell
+    commands:
+      - 'echo "caught error"'
+    next: done
+  done:
+    type: shell
+    commands:
+      - 'echo "finished"'

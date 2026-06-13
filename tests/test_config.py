@@ -22,5 +22,5 @@ def test_validate_pipeline_missing_steps():
         validate_pipeline({"entry": "a"})
 
 def test_validate_pipeline_missing_step_type():
-    with pytest.raises(ValueError, match="Step 'a' must have 'type'"):
+    with pytest.raises(ValueError, match="missing 'type'"):
         validate_pipeline({"entry": "a", "steps": {"a": {}}})

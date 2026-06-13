@@ -1,0 +1,22 @@
+# Edge case: condition true/false routing
+entry: decide
+steps:
+  decide:
+    type: condition
+    expression: "{{score}} > 80"
+    on_true: high_score
+    on_false: low_score
+  high_score:
+    type: shell
+    commands:
+      - 'echo "high score: {{score}}"'
+    next: done
+  low_score:
+    type: shell
+    commands:
+      - 'echo "low score: {{score}}"'
+    next: done
+  done:
+    type: shell
+    commands:
+      - 'echo "finished"'

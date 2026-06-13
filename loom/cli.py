@@ -121,6 +121,46 @@ def status(
 
 
 @app.command()
+def validate(
+    pipeline: str = typer.Option("pipeline.yaml", "--pipeline", "-p", help="Pipeline YAML file"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """Validate a pipeline YAML file without running it."""
+    pipeline_path = Path(_resolve_option(pipeline, "pipeline.yaml"))
+
+    if not pipeline_path.exists():
+        typer.echo(f"Error: {pipeline_path} not found", err=True)
+        raise typer.Exit(1)
+
+    try:
+        from loom.config import validate_pipeline
+        import yaml
+
+        with open(pipeline_path) as f:
+            config = yaml.safe_load(f)
+        validate_pipeline(config)
+
+        if json_output:
+            typer.echo(json.dumps({"valid": True, "file": str(pipeline_path)}))
+        else:
+            typer.echo(f"✓ {pipeline_path} is valid")
+            steps = config.get("steps", {})
+            node_types = {}
+            for name, step in steps.items():
+                t = step.get("type", "?")
+                node_types[t] = node_types.get(t, 0) + 1
+            typer.echo(f"  {len(steps)} nodes: {', '.join(f'{t}×{c}' for t, c in node_types.items())}")
+    except ValueError as e:
+        if json_output:
+            typer.echo(json.dumps({"valid": False, "errors": str(e).split("; ")}))
+        else:
+            typer.echo(f"✗ {pipeline_path} has errors:", err=True)
+            for err in str(e).split("; "):
+                typer.echo(f"  • {err}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
 def agents(
     json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
 ):

@@ -64,7 +64,7 @@ steps:
   agent_check:
     type: agent
     agent: hermes
-    prompt: "You are a code reviewer. Reply PASS. The project passes all checks."
+    prompt: "Reply with exactly one word: PASS"
     pass_keyword: PASS
     on_pass: human_gate
     on_fail: fix_agent
@@ -102,7 +102,7 @@ steps:
   fix_agent:
     type: agent
     agent: hermes
-    prompt: "Pipeline failed. Reply PASS to retry, or FAIL to abort."
+    prompt: "Reply with exactly one word: PASS"
     pass_keyword: PASS
     on_pass: parallel_verify
     on_fail: human_review
