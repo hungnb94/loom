@@ -23,5 +23,9 @@ class BaseNode:
 
     @staticmethod
     def render(template_str: str, state: dict[str, Any]) -> str:
-        """Render a Jinja2 template with shared state."""
+        """Render a Jinja2 template with shared state.
+        Returns raw string if no Jinja2 markers ({{ or {%) found.
+        """
+        if "{{" not in template_str and "{%" not in template_str:
+            return template_str
         return Template(template_str).render(**state)

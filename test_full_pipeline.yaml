@@ -1,0 +1,120 @@
+# Full Loom Pipeline — Test ALL 7 node types
+# shell → condition → parallel → log → agent → human → subflow → done
+
+entry: setup
+steps:
+  # ──────────────────────────────────────────────
+  # 1. SHELL NODE — Run sequential commands
+  # ──────────────────────────────────────────────
+  setup:
+    type: shell
+    commands:
+      - 'echo "=== Loom Full Pipeline Test ==="'
+      - 'echo "Python version OK"'
+      - 'mkdir -p .loom_test'
+      - 'echo "setup done" > .loom_test/setup.txt'
+    on_pass: check_env
+    on_fail: abort
+
+  # ──────────────────────────────────────────────
+  # 2. CONDITION NODE — Evaluate expression
+  # ──────────────────────────────────────────────
+  check_env:
+    type: condition
+    expression: "True"
+    on_true: parallel_verify
+    on_false: abort
+
+  # ──────────────────────────────────────────────
+  # 3. PARALLEL NODE — Run branches concurrently
+  # ──────────────────────────────────────────────
+  parallel_verify:
+    type: parallel
+    branches:
+      - name: compile
+        type: shell
+        commands:
+          - .venv/bin/python -m py_compile loom/executor.py
+          - .venv/bin/python -m py_compile loom/nodes/base.py
+          - echo "compile PASS"
+      - name: unit_test
+        type: shell
+        commands:
+          - .venv/bin/python -m pytest tests/test_nodes.py tests/test_state.py -q
+      - name: shell_test
+        type: shell
+        commands:
+          - .venv/bin/python -m pytest tests/test_parallel.py tests/test_parallel_node.py -q
+    on_pass: log_result
+    on_fail: fix_agent
+    max_visits: 3
+
+  # ──────────────────────────────────────────────
+  # 4. LOG NODE — Write to file with Jinja2
+  # ──────────────────────────────────────────────
+  log_result:
+    type: log
+    message: "[{{timestamp}}] Pipeline verify PASSED — compile={{compile_output}}"
+    file: .loom_test/pipeline.log
+    next: agent_check
+
+  # ──────────────────────────────────────────────
+  # 5. AGENT NODE — Call hermes CLI
+  # ──────────────────────────────────────────────
+  agent_check:
+    type: agent
+    agent: hermes
+    prompt: "You are a code reviewer. Reply PASS. The project passes all checks."
+    pass_keyword: PASS
+    on_pass: human_gate
+    on_fail: fix_agent
+    max_visits: 2
+
+  # ──────────────────────────────────────────────
+  # 6. HUMAN NODE — Pause for approval
+  # ──────────────────────────────────────────────
+  human_gate:
+    type: human
+    on_approve: subflow_demo
+    on_decline: abort
+
+  # ──────────────────────────────────────────────
+  # 7. SUBFLOW NODE — Run sub-pipeline (stub)
+  # ──────────────────────────────────────────────
+  subflow_demo:
+    type: subflow
+    pipeline: examples/pipeline.yaml
+    on_complete: done
+    on_error: abort
+
+  # ──────────────────────────────────────────────
+  # FINAL — shell
+  # ──────────────────────────────────────────────
+  done:
+    type: shell
+    commands:
+      - 'echo "=== ALL 7 NODE TYPES PASSED ==="'
+      - 'rm -rf .loom_test'
+
+  # ──────────────────────────────────────────────
+  # ERROR PATH — agent + human
+  # ──────────────────────────────────────────────
+  fix_agent:
+    type: agent
+    agent: hermes
+    prompt: "Pipeline failed. Reply PASS to retry, or FAIL to abort."
+    pass_keyword: PASS
+    on_pass: parallel_verify
+    on_fail: human_review
+    max_visits: 2
+
+  human_review:
+    type: human
+    on_approve: parallel_verify
+    on_decline: abort
+
+  abort:
+    type: shell
+    commands:
+      - 'echo "=== PIPELINE ABORTED ==="'
+      - 'rm -rf .loom_test'
