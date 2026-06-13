@@ -1,5 +1,13 @@
 import pytest
+import sys
+from unittest.mock import MagicMock
 from loom.nodes.human import HumanNode
+
+# Mock hermes_tools for channel tests
+_mock_hermes = MagicMock()
+_mock_hermes.send_message = MagicMock()
+if 'hermes_tools' not in sys.modules:
+    sys.modules['hermes_tools'] = _mock_hermes
 
 
 @pytest.mark.asyncio
@@ -80,3 +88,66 @@ async def test_human_input_none_stays_none_after_run():
     assert node._user_input is None
     await node.run({})
     assert node._user_input == "approve"  # auto-approved in non-TTY
+
+
+@pytest.mark.asyncio
+async def test_human_channel_fallback_no_hermes():
+    """Channel mode falls back to approve when send_message fails."""
+    # Make send_message raise to trigger fallback
+    _mock_hermes.send_message.side_effect = Exception("no network")
+    node = HumanNode(name="gate", config={
+        "channel": "telegram:123:456",
+        "on_approve": "next",
+        "on_decline": "abort",
+    })
+    success, output, state = await node.run({})
+    assert success is True
+    assert output == "approve"
+    _mock_hermes.send_message.side_effect = None  # reset
+
+
+@pytest.mark.asyncio
+async def test_human_channel_timeout():
+    """Channel mode with timeout=0 immediately times out."""
+    node = HumanNode(name="gate", config={
+        "channel": "telegram:123:456",
+        "timeout": 0,
+        "on_timeout": "abort",
+        "on_decline": "abort",
+    })
+    success, output, state = await node.run({})
+    assert success is False
+    assert output == "timeout"
+
+
+def test_human_route_timeout():
+    """Route to on_timeout when timeout occurred."""
+    node = HumanNode(name="gate", config={
+        "on_approve": "next",
+        "on_decline": "abort",
+        "on_timeout": "timeout_handler",
+    })
+    node._user_input = "timeout"
+    assert node.route(False) == "timeout_handler"
+
+
+def test_human_route_timeout_fallback():
+    """Timeout falls back to on_decline if on_timeout not set."""
+    node = HumanNode(name="gate", config={
+        "on_approve": "next",
+        "on_decline": "abort",
+    })
+    node._user_input = "timeout"
+    assert node.route(False) == "abort"
+
+
+@pytest.mark.asyncio
+async def test_human_channel_message_jinja2():
+    """Channel message supports Jinja2 rendering."""
+    node = HumanNode(name="gate", config={
+        "channel": "telegram:123:456",
+        "message": "Node: {{current_node}} Score: {{score}}",
+        "timeout": 0,
+    })
+    success, output, state = await node.run({"current_node": "gate", "score": 90})
+    assert output == "timeout"
