@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from loom.state import PipelineState
 from loom.nodes.shell import ShellNode
@@ -40,8 +41,8 @@ class GraphExecutor:
             raise RuntimeError(f"Max visits exceeded for node: {node}")
         return True
 
-    def _persist_state(self, state: PipelineState):
-        state.save(Path("pipeline.state"))
+    async def _persist_state(self, state: PipelineState):
+        await asyncio.to_thread(state.save, Path("pipeline.state"))
 
     def _update_tui(self, tui, node: str, status: str, output: str = ""):
         if tui is None:
@@ -78,7 +79,7 @@ class GraphExecutor:
                 visit_counts=visit_counts,
                 shared_state=shared_state,
             )
-            self._persist_state(state)
+            await self._persist_state(state)
 
             next_node = node.route(success)
             if not next_node:
