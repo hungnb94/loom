@@ -2,7 +2,6 @@ import pytest
 from loom.nodes.base import BaseNode
 from loom.nodes.shell import ShellNode
 from loom.nodes.agent import AgentNode
-from loom.nodes.human import HumanNode
 from loom.nodes.condition import ConditionNode
 from loom.nodes.subflow import SubflowNode
 from loom.nodes.log import LogNode
@@ -13,7 +12,7 @@ from loom.state import PipelineState
 
 def test_node_registry_has_all_types():
     """All node types must be registered in executor."""
-    expected = {"agent", "shell", "human", "condition", "subflow", "log", "parallel"}
+    expected = {"agent", "shell", "condition", "subflow", "log", "parallel"}
     assert set(NODE_REGISTRY.keys()) == expected
 
 

@@ -3,10 +3,7 @@ from collections import defaultdict, deque
 EDGE_KEYS = [
     ("on_pass", "✓"), ("on_fail", "✗"),
     ("on_true", "T"), ("on_false", "F"),
-    ("on_approve", "✓"), ("on_decline", "✗"),
-    ("on_timeout", "⏱"),
     ("on_complete", "→"), ("on_error", "✗"),
-    ("on_skip", "⊘"),
     ("next", "→"),
 ]
 
@@ -16,7 +13,6 @@ EDGE_KEY_NAMES = [key for key, _ in EDGE_KEYS]
 TYPE_ICONS = {
     "shell": "⚙",
     "agent": "🤖",
-    "human": "👤",
     "condition": "◆",
     "subflow": "📦",
     "log": "📝",

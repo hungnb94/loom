@@ -94,40 +94,6 @@ async def test_agent_node_jinja2_template():
 
 
 @pytest.mark.asyncio
-async def test_human_node():
-    from loom.nodes.human import HumanNode
-
-    node = HumanNode(
-        name="test",
-        config={
-            "prompt": "Approve?",
-            "on_approve": "done",
-            "on_decline": "retry",
-        },
-    )
-    node._user_input = "approve"
-    success, output, state = await node.run({})
-    assert success is True
-
-
-@pytest.mark.asyncio
-async def test_human_node_decline():
-    from loom.nodes.human import HumanNode
-
-    node = HumanNode(
-        name="test",
-        config={
-            "prompt": "Approve?",
-            "on_approve": "done",
-            "on_decline": "retry",
-        },
-    )
-    node._user_input = "decline"
-    success, output, state = await node.run({})
-    assert success is False
-
-
-@pytest.mark.asyncio
 async def test_condition_node_true():
     from loom.nodes.condition import ConditionNode
 

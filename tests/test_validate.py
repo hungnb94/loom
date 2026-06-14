@@ -127,32 +127,25 @@ def test_multiple_errors_collected():
     assert "entry" in msg.lower() or "alien" in msg
 
 
-def test_human_node_valid():
-    validate_pipeline({"entry": "a", "steps": {
-        "a": {"type": "human", "on_approve": "b"},
-        "b": {"type": "shell", "commands": ["echo"]},
-    }})
-
-
 def test_subflow_node_valid():
     validate_pipeline({"entry": "a", "steps": {
         "a": {"type": "subflow", "pipeline": "other.yaml"},
     }})
 
 
-def test_human_node_on_timeout_valid():
-    """on_timeout edge should be validated like other edge keys."""
+def test_subflow_on_error_valid():
+    """on_error edge should be validated like other edge keys."""
     validate_pipeline({"entry": "a", "steps": {
-        "a": {"type": "human", "on_approve": "b", "on_timeout": "c"},
+        "a": {"type": "subflow", "on_complete": "b", "on_error": "c"},
         "b": {"type": "shell", "commands": ["echo ok"]},
-        "c": {"type": "shell", "commands": ["echo timeout"]},
+        "c": {"type": "shell", "commands": ["echo error"]},
     }})
 
 
-def test_on_timeout_references_nonexistent():
-    """on_timeout referencing a non-existent node should fail validation."""
+def test_on_error_references_nonexistent():
+    """on_error referencing a non-existent node should fail validation."""
     with pytest.raises(ValueError, match="references non-existent node"):
         validate_pipeline({"entry": "a", "steps": {
-            "a": {"type": "human", "on_approve": "b", "on_timeout": "ghost"},
+            "a": {"type": "subflow", "on_complete": "b", "on_error": "ghost"},
             "b": {"type": "shell", "commands": ["echo ok"]},
         }})

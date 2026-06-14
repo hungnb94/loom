@@ -1,5 +1,5 @@
-# Full Loom Pipeline — Test ALL 7 node types
-# shell → condition → parallel → log → agent → human → subflow → done
+# Full Loom Pipeline — Test ALL 6 node types
+# shell → condition → parallel → log → agent → subflow → done
 
 entry: setup
 steps:
@@ -66,20 +66,12 @@ steps:
     agent: hermes
     prompt: "Reply with exactly one word: PASS"
     pass_keyword: PASS
-    on_pass: human_gate
+    on_pass: subflow_demo
     on_fail: fix_agent
     max_visits: 2
 
   # ──────────────────────────────────────────────
-  # 6. HUMAN NODE — Pause for approval
-  # ──────────────────────────────────────────────
-  human_gate:
-    type: human
-    on_approve: subflow_demo
-    on_decline: abort
-
-  # ──────────────────────────────────────────────
-  # 7. SUBFLOW NODE — Run sub-pipeline (stub)
+  # 6. SUBFLOW NODE — Run sub-pipeline (stub)
   # ──────────────────────────────────────────────
   subflow_demo:
     type: subflow
@@ -93,11 +85,11 @@ steps:
   done:
     type: shell
     commands:
-      - 'echo "=== ALL 7 NODE TYPES PASSED ==="'
+      - 'echo "=== ALL 6 NODE TYPES PASSED ==="'
       - 'rm -rf .loom_test'
 
   # ──────────────────────────────────────────────
-  # ERROR PATH — agent + human
+  # ERROR PATH — agent retry
   # ──────────────────────────────────────────────
   fix_agent:
     type: agent
@@ -105,13 +97,8 @@ steps:
     prompt: "Reply with exactly one word: PASS"
     pass_keyword: PASS
     on_pass: parallel_verify
-    on_fail: human_review
+    on_fail: abort
     max_visits: 2
-
-  human_review:
-    type: human
-    on_approve: parallel_verify
-    on_decline: abort
 
   abort:
     type: shell

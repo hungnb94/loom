@@ -4,7 +4,7 @@ import yaml
 
 from loom.graph import EDGE_KEY_NAMES
 
-VALID_TYPES = {"agent", "shell", "human", "condition", "subflow", "log", "parallel"}
+VALID_TYPES = {"agent", "shell", "condition", "subflow", "log", "parallel"}
 
 
 def load_pipeline(path: Path) -> dict:

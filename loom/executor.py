@@ -3,7 +3,6 @@ from pathlib import Path
 from loom.state import PipelineState
 from loom.nodes.shell import ShellNode
 from loom.nodes.agent import AgentNode
-from loom.nodes.human import HumanNode
 from loom.nodes.condition import ConditionNode
 from loom.nodes.subflow import SubflowNode
 from loom.nodes.log import LogNode
@@ -12,7 +11,6 @@ from loom.nodes.parallel import ParallelNode
 NODE_REGISTRY = {
     "agent": AgentNode,
     "shell": ShellNode,
-    "human": HumanNode,
     "condition": ConditionNode,
     "subflow": SubflowNode,
     "log": LogNode,

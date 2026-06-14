@@ -39,17 +39,17 @@ class TestBuildEdges:
         edges = build_edges(config)
         assert len(edges) == 2
 
-    def test_human_edges(self):
+    def test_subflow_edges(self):
         config = {
             "entry": "a",
             "steps": {
-                "a": {"type": "human", "on_approve": "b", "on_decline": "c"},
+                "a": {"type": "subflow", "on_complete": "b", "on_error": "c"},
                 "b": {"type": "shell", "commands": ["echo"]},
                 "c": {"type": "shell", "commands": ["echo"]},
             },
         }
         edges = build_edges(config)
-        assert ("a", "b", "✓") in edges
+        assert ("a", "b", "→") in edges
         assert ("a", "c", "✗") in edges
 
     def test_next_edge(self):
@@ -140,12 +140,12 @@ class TestRenderGraph:
         config = {
             "entry": "a",
             "steps": {
-                "a": {"type": "human", "on_approve": "b", "on_timeout": "c"},
+                "a": {"type": "subflow", "on_complete": "b", "on_error": "c"},
                 "b": {"type": "shell", "commands": ["echo ok"]},
-                "c": {"type": "shell", "commands": ["echo timeout"]},
+                "c": {"type": "shell", "commands": ["echo error"]},
             },
         }
         edges = build_edges(config)
-        assert ("a", "c", "⏱") in edges
+        assert ("a", "c", "✗") in edges
         result = render_graph(config)
-        assert "⏱" in result
+        assert "✗" in result
