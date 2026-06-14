@@ -6,6 +6,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/start_pipeline.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/logger.js"
           }
         ]
       }
@@ -16,6 +20,30 @@
           {
             "type": "command",
             "command": "node .claude/hooks/check_pipeline.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/logger.js"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/logger.js"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/logger.js"
           }
         ]
       }
