@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""Stop hook: blocks Claude from stopping mid-pipeline."""
+import json
+import re
+import sys
+from pathlib import Path
+
+import yaml
+
+STATE_PATH = Path(".claude/pipeline.state")
+
+
+def render(template: str, state: dict) -> str:
+    return re.sub(r"\{\{(\w+)\}\}", lambda m: str(state.get(m.group(1), m.group(0))), template)
+
+
+def main():
+    if not STATE_PATH.exists():
+        sys.exit(0)
+
+    state = json.loads(STATE_PATH.read_text())
+
+    if state.get("mode") != "pipeline":
+        sys.exit(0)
+
+    pipeline_path = Path(state.get("pipeline", "examples/pipeline.yaml"))
+    if not pipeline_path.exists():
+        sys.exit(0)
+
+    config = yaml.safe_load(pipeline_path.read_text())
+    current = state.get("current_step", "")
+    step = config.get("steps", {}).get(current, {})
+
+    if step.get("terminal"):
+        sys.exit(0)
+
+    shared = state.get("shared_state", {})
+    shared["requirement"] = state.get("requirement", "")
+
+    prompt = render(step.get("prompt", ""), shared)
+    step_type = step.get("type", "agent")
+    agent = step.get("agent", "claude")
+
+    print(
+        f"Pipeline active — current step: '{current}' (type={step_type}, agent={agent}).\n"
+        f"Complete this step before stopping.\n\n"
+        f"Step prompt:\n{prompt.strip()}"
+    )
+    sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()
