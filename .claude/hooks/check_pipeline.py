@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # hooks/ -> .claude/ -> project root
-STATE_PATH = PROJECT_ROOT / ".claude/pipeline.state"
+STATE_PATH = PROJECT_ROOT / ".pipeline/pipeline.state"
 
 
 def render(template: str, state: dict) -> str:
@@ -27,7 +27,7 @@ def main():
     if state.get("mode") != "pipeline":
         sys.exit(0)
 
-    pipeline_path = PROJECT_ROOT / state.get("pipeline", "examples/pipeline.yaml")
+    pipeline_path = PROJECT_ROOT / state.get("pipeline", ".pipeline/pipeline.yaml")
     if not pipeline_path.exists():
         sys.exit(0)
 

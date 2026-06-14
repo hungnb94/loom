@@ -4,7 +4,7 @@ Run a pipeline YAML file step by step, enforcing sequential execution.
 
 `$ARGUMENTS` format: `[pipeline_file] <requirement>`
 
-- If one token: treat as requirement, use `examples/pipeline.yaml` as pipeline.
+- If one token: treat as requirement, use `.pipeline/pipeline.yaml` as pipeline.
 - If first token ends with `.yaml`: first token = pipeline file, rest = requirement.
 
 ## Instructions
@@ -19,7 +19,7 @@ Read the pipeline YAML file. Confirm it's valid (has `entry` and `steps` keys). 
 
 ### 3. Initialize state
 
-Write `.claude/pipeline.state`:
+Write `.pipeline/pipeline.state`:
 
 ```json
 {
@@ -66,7 +66,7 @@ For each step, starting from `entry`:
 python3 -c "
 import json
 from pathlib import Path
-p = Path('.claude/pipeline.state')
+p = Path('.pipeline/pipeline.state')
 s = json.loads(p.read_text())
 s['completed_steps'].append('<current_step>')
 s['current_step'] = '<next_step>'
@@ -81,5 +81,5 @@ p.write_text(json.dumps(s, indent=2))
 
 When a step has `terminal: true`, after executing it:
 - Update `completed_steps`
-- Set `mode` to `"free"` in state file
+- Set `mode` to `"free"` in state file (keep the file — do not delete it)
 - Report pipeline complete to user
