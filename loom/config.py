@@ -1,13 +1,11 @@
 from pathlib import Path
-from jinja2 import Environment, BaseLoader, TemplateSyntaxError
+from jinja2 import TemplateSyntaxError
 import yaml
 
 from loom.graph import EDGE_KEY_NAMES
+from loom.nodes.base import _JINJA_ENV
 
 VALID_TYPES = {"agent", "shell", "condition", "subflow", "log", "parallel"}
-
-# Module-level Jinja2 environment for syntax validation (no autoescape needed for config).
-_JINJA_ENV = Environment(loader=BaseLoader(), autoescape=False)
 
 
 def load_pipeline(path: Path) -> dict:

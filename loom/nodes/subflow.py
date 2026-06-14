@@ -8,7 +8,7 @@ class SubflowNode(BaseNode):
     pipeline file. For V1 it returns success immediately as a stub.
     """
 
-    async def run(self, state: dict):
+    async def run(self, state: dict) -> tuple[bool, str, dict]:
         pipeline_path = self.config.get("pipeline")
         if not pipeline_path:
             return False, "No pipeline specified", state

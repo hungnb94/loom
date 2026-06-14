@@ -16,19 +16,12 @@ class ShellNode(BaseNode):
         outputs: list[str] = []
         for cmd_template in commands:
             cmd = self.render(cmd_template, state)
-            try:
-                proc = await asyncio.wait_for(
-                    asyncio.create_subprocess_shell(
-                        cmd,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE,
-                        cwd=Path.cwd(),
-                    ),
-                    timeout=timeout,
-                )
-            except asyncio.TimeoutError:
-                outputs.append(f"Command timed out after {timeout}s: {cmd}")
-                return False, "\n".join(outputs), state
+            proc = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=Path.cwd(),
+            )
             try:
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
             except asyncio.TimeoutError:

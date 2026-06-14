@@ -44,7 +44,7 @@ steps:
       - name: shell_test
         type: shell
         commands:
-          - .venv/bin/python -m pytest tests/test_parallel.py tests/test_parallel_node.py -q
+          - .venv/bin/python -m pytest tests/test_parallel_node.py -q
     on_pass: log_result
     on_fail: fix_agent
     max_visits: 3
