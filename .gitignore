@@ -1,0 +1,5 @@
+*.pyc
+.idea
+pipeline.state
+.DS_Store
+loom.log

@@ -1,0 +1,71 @@
+from typing import Any
+
+import asyncio
+from pathlib import Path
+from loom.nodes.base import BaseNode
+from loom.agents import AgentAdapter
+
+# Module-level cache for AgentAdapter — avoids class-mutable-state antipattern.
+# Invalidated by mtime check on agents.yaml.
+_adapter_cache: AgentAdapter | None = None
+_agents_path_mtime: float | None = None
+
+
+def reset_agent_cache() -> None:
+    """Reset the module-level AgentAdapter cache. Call in test teardown."""
+    global _adapter_cache, _agents_path_mtime
+    _adapter_cache = None
+    _agents_path_mtime = None
+
+
+class AgentNode(BaseNode):
+    """Spawn an agent subprocess and evaluate its output for pass/fail."""
+
+    async def run(self, state: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
+        prompt = self.render(self.config.get("prompt", ""), state)
+        agent_name = self.config.get("agent", "echo")
+        pass_keyword = self.config.get("pass_keyword", "PASS")
+        timeout = self.config.get("timeout", 300)
+
+        # Resolve agent command from agents.yaml with caching
+        agents_path = Path.home() / ".loom" / "agents.yaml"
+        cmd = self._resolve_cmd(agents_path, agent_name, prompt)
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                err_msg = f"Agent timed out after {timeout}s: {agent_name}"
+                return False, err_msg, state
+        except FileNotFoundError as exc:
+            # Agent binary not found — surface clearly
+            err_msg = f"Agent binary not found: {exc.filename}"
+            return False, err_msg, state
+
+        output = stdout.decode("utf-8", errors="replace") + stderr.decode("utf-8", errors="replace")
+        return pass_keyword in output, output, state
+
+    @classmethod
+    def _resolve_cmd(cls, agents_path: Path, agent_name: str, prompt: str) -> list[str]:
+        global _adapter_cache, _agents_path_mtime
+
+        if not agents_path.exists():
+            return [agent_name, prompt]
+
+        # Check mtime for cache invalidation
+        mtime = agents_path.stat().st_mtime
+        if _adapter_cache is None or _agents_path_mtime != mtime:
+            _adapter_cache = AgentAdapter(agents_path)
+            _agents_path_mtime = mtime
+
+        try:
+            return _adapter_cache.resolve(agent_name, prompt)
+        except ValueError:
+            return [agent_name, prompt]

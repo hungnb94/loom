@@ -7,16 +7,8 @@ steps:
     tools: [Read, Glob, Grep]
     prompt: |
       Requirement: {{requirement}}
-
-      Read the codebase and identify:
-      1. Scope — which files need to change?
-      2. Dependencies — what needs to exist first?
-      3. Clarified requirement — rewrite clearly
-
-      Output format (exact):
-      SCOPE: [file list]
-      DEPENDS_ON: [none or description]
-      PASS: [clarified requirement]
+      Read the codebase and identify scope, dependencies, and clarified requirement.
+      Output format: PASS: [clarified requirement]
     pass_keyword: PASS
     on_pass: plan
     on_fail: clarify
@@ -28,7 +20,6 @@ steps:
     tools: [Read, Glob, Grep]
     prompt: |
       Requirement: {{clarify_output}}
-
       Write a step-by-step implementation plan.
       Reply: PASS: [numbered steps]
     pass_keyword: PASS
@@ -57,9 +48,7 @@ steps:
     agent: opencode
     prompt: |
       Fix the errors below. Only touch related files, do not refactor.
-
-      Errors:
-      {{verify_output}}
+      Errors: {{verify_output}}
     next: verify
 
   review:
