@@ -7,7 +7,8 @@ from pathlib import Path
 
 import yaml
 
-STATE_PATH = Path(".claude/pipeline.state")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # hooks/ -> .claude/ -> project root
+STATE_PATH = PROJECT_ROOT / ".claude/pipeline.state"
 
 
 def render(template: str, state: dict) -> str:
@@ -18,18 +19,28 @@ def main():
     if not STATE_PATH.exists():
         sys.exit(0)
 
-    state = json.loads(STATE_PATH.read_text())
+    try:
+        state = json.loads(STATE_PATH.read_text())
+    except (json.JSONDecodeError, OSError):
+        sys.exit(0)
 
     if state.get("mode") != "pipeline":
         sys.exit(0)
 
-    pipeline_path = Path(state.get("pipeline", "examples/pipeline.yaml"))
+    pipeline_path = PROJECT_ROOT / state.get("pipeline", "examples/pipeline.yaml")
     if not pipeline_path.exists():
         sys.exit(0)
 
-    config = yaml.safe_load(pipeline_path.read_text())
+    try:
+        config = yaml.safe_load(pipeline_path.read_text())
+    except Exception:
+        sys.exit(0)
+
     current = state.get("current_step", "")
     step = config.get("steps", {}).get(current, {})
+
+    if not step:
+        sys.exit(0)
 
     if step.get("terminal"):
         sys.exit(0)
