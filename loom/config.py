@@ -3,7 +3,7 @@ from jinja2 import TemplateSyntaxError
 import yaml
 
 from loom.graph import EDGE_KEY_NAMES
-from loom.nodes.base import _JINJA_ENV
+from loom.jinja_env import JINJA_ENV
 
 VALID_TYPES = {"agent", "shell", "condition", "subflow", "log", "parallel"}
 
@@ -99,7 +99,7 @@ def validate_pipeline(config: dict) -> None:
             for val in values_to_check:
                 if "{{" in val or "{%" in val:
                     try:
-                        _JINJA_ENV.from_string(val)
+                        JINJA_ENV.from_string(val)
                     except TemplateSyntaxError as e:
                         errors.append(f"step '{name}': field '{field_key}' has invalid Jinja2: {e}")
 

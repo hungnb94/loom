@@ -1,8 +1,8 @@
 from typing import Any
-from jinja2 import Environment, BaseLoader
+from loom.jinja_env import JINJA_ENV
 
-# Module-level Jinja2 environment to avoid re-parsing templates repeatedly.
-_JINJA_ENV = Environment(loader=BaseLoader(), autoescape=False)
+# Re-export for backward compatibility (other modules import from here)
+_JINJA_ENV = JINJA_ENV
 
 
 class BaseNode:

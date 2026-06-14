@@ -23,6 +23,7 @@ _SAFE_OPS = {
     ast.And: operator.and_,
     ast.Or: operator.or_,
     ast.In: operator.contains,
+    ast.NotIn: lambda a, b: not operator.contains(a, b),
     ast.Is: operator.is_,
     ast.Not: operator.not_,
 }
@@ -53,14 +54,14 @@ class ConditionNode(BaseNode):
                 result = False
         return bool(result), str(result), state
 
-    @classmethod
-    def _safe_eval(cls, expr: str):
+    @staticmethod
+    def _safe_eval(expr: str):
         """Evaluate a simple expression using only whitelisted AST nodes."""
         tree = ast.parse(expr, mode="eval")
-        return cls._eval_node(tree.body)
+        return ConditionNode._eval_node(tree.body)
 
-    @classmethod
-    def _eval_node(cls, node: ast.AST):
+    @staticmethod
+    def _eval_node(node: ast.AST):
         if isinstance(node, ast.Constant):
             return node.value
         if isinstance(node, ast.Name):
@@ -71,14 +72,14 @@ class ConditionNode(BaseNode):
             op = _SAFE_OPS.get(type(node.op))
             if not op:
                 raise _SafeEvalError(f"Unsupported unary op: {type(node.op).__name__}")
-            return op(cls._eval_node(node.operand))
+            return op(ConditionNode._eval_node(node.operand))
         if isinstance(node, ast.BinOp):
             op = _SAFE_OPS.get(type(node.op))
             if not op:
                 raise _SafeEvalError(f"Unsupported binary op: {type(node.op).__name__}")
-            return op(cls._eval_node(node.left), cls._eval_node(node.right))
+            return op(ConditionNode._eval_node(node.left), ConditionNode._eval_node(node.right))
         if isinstance(node, ast.BoolOp):
-            values = [cls._eval_node(v) for v in node.values]
+            values = [ConditionNode._eval_node(v) for v in node.values]
             op = _SAFE_OPS.get(type(node.op))
             if not op:
                 raise _SafeEvalError(f"Unsupported bool op: {type(node.op).__name__}")
@@ -88,20 +89,20 @@ class ConditionNode(BaseNode):
                 result = op(result, v)
             return result
         if isinstance(node, ast.Compare):
-            left = cls._eval_node(node.left)
+            left = ConditionNode._eval_node(node.left)
             for op, comparator in zip(node.ops, node.comparators):
                 op_func = _SAFE_OPS.get(type(op))
                 if not op_func:
                     raise _SafeEvalError(f"Unsupported compare op: {type(op).__name__}")
-                right = cls._eval_node(comparator)
-                if isinstance(op, ast.In):
+                right = ConditionNode._eval_node(comparator)
+                if type(op) in (ast.In, ast.NotIn):
                     left, right = right, left  # operator.contains(a, b) == b in a
                 if not op_func(left, right):
                     return False
                 left = right
             return True
         if isinstance(node, ast.Expression):
-            return cls._eval_node(node.body)
+            return ConditionNode._eval_node(node.body)
         raise _SafeEvalError(f"Unsupported node type: {type(node).__name__}")
 
     def route(self, success: bool) -> str | None:

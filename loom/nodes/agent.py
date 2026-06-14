@@ -11,6 +11,13 @@ _adapter_cache: AgentAdapter | None = None
 _agents_path_mtime: float | None = None
 
 
+def reset_agent_cache() -> None:
+    """Reset the module-level AgentAdapter cache. Call in test teardown."""
+    global _adapter_cache, _agents_path_mtime
+    _adapter_cache = None
+    _agents_path_mtime = None
+
+
 class AgentNode(BaseNode):
     """Spawn an agent subprocess and evaluate its output for pass/fail."""
 
