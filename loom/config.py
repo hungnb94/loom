@@ -22,11 +22,7 @@ def load_agents(path: Path) -> dict:
 
 
 def validate_pipeline(config: dict) -> None:
-    """Full pipeline validation. Collects all errors, raises once.
-
-    Structural checks (missing steps, non-dict steps) raise early because
-    per-node validation cannot proceed without a valid steps dict.
-    """
+    """Full pipeline validation. Collects all errors, raises once."""
     errors = []
 
     # ── Structure ──
@@ -37,10 +33,12 @@ def validate_pipeline(config: dict) -> None:
         errors.append("pipeline must have 'entry' node")
     if "steps" not in config:
         errors.append("pipeline must have 'steps' section")
+
+    # Structural gates: per-node validation requires a valid steps dict.
+    if errors:
         raise ValueError("; ".join(errors))
     if not isinstance(config["steps"], dict):
-        errors.append("pipeline 'steps' must be a dict")
-        raise ValueError("; ".join(errors))
+        raise ValueError("pipeline 'steps' must be a dict")
 
     entry = config.get("entry")
     steps = config["steps"]

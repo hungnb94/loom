@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
@@ -64,7 +66,6 @@ class LoomTUI:
 
     async def run_live(self, refresh_per_second: int = 4) -> None:
         """Run a live-updating TUI display (blocks until interrupted)."""
-        import asyncio
         with Live(self.render(), console=self.console,
                   refresh_per_second=refresh_per_second) as live:
             try:

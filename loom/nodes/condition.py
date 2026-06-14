@@ -19,7 +19,6 @@ _SAFE_OPS = {
     ast.Div: operator.truediv,
     ast.FloorDiv: operator.floordiv,
     ast.Mod: operator.mod,
-    ast.Pow: operator.pow,
     ast.USub: operator.neg,
     ast.And: operator.and_,
     ast.Or: operator.or_,

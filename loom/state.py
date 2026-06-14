@@ -59,4 +59,8 @@ class PipelineState:
             finally:
                 if _unlock:
                     _unlock(f)
+        # Validate required fields before constructing the dataclass.
+        missing = [k for k in ("current_node", "visit_counts", "shared_state") if k not in data]
+        if missing:
+            raise ValueError(f"Corrupt pipeline.state: missing fields {missing}")
         return cls(**data)
