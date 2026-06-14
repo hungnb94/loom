@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/start_pipeline.py"
+            "command": "node .claude/hooks/start_pipeline.js"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/check_pipeline.py"
+            "command": "node .claude/hooks/check_pipeline.js"
           }
         ]
       }
