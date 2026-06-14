@@ -20,7 +20,7 @@ function buildEntry(data) {
   };
 
   switch (data.hook_event_name) {
-    case 'Start':
+    case 'SessionStart':
       entry.source = data.source;
       break;
     case 'PreToolUse':
