@@ -1,5 +1,8 @@
 from typing import Any
-from jinja2 import Template
+from jinja2 import Environment, BaseLoader
+
+# Module-level Jinja2 environment to avoid re-parsing templates repeatedly.
+_JINJA_ENV = Environment(loader=BaseLoader(), autoescape=False)
 
 
 class BaseNode:
@@ -28,4 +31,4 @@ class BaseNode:
         """
         if "{{" not in template_str and "{%" not in template_str:
             return template_str
-        return Template(template_str).render(**state)
+        return _JINJA_ENV.from_string(template_str).render(**state)

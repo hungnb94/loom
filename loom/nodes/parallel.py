@@ -31,23 +31,24 @@ class ParallelNode(BaseNode):
         )
 
         all_passed = True
-        outputs = []
+        outputs: list[str] = []
         updated_state = dict(state)
 
         for branch, result in zip(branches, results):
             name = branch["name"]
+            output_key = f"{name}_output"
             if isinstance(result, BaseException):
                 all_passed = False
                 outputs.append(f"{name}: ERROR — {result}")
-                updated_state[f"{name}_output"] = str(result)
+                updated_state[output_key] = str(result)
                 continue
             success, output, branch_state = result
             if not success:
                 all_passed = False
             outputs.append(f"{name}: {'PASS' if success else 'FAIL'} — {output[:200]}")
-            updated_state[f"{name}_output"] = output
+            updated_state[output_key] = output
             for key, value in branch_state.items():
-                if key == f"{name}_output":
+                if key == output_key:
                     # Branch's own output always wins
                     updated_state[key] = value
                 elif key not in updated_state:

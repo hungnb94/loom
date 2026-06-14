@@ -16,6 +16,7 @@ class AgentNode(BaseNode):
         prompt = self.render(self.config.get("prompt", ""), state)
         agent_name = self.config.get("agent", "echo")
         pass_keyword = self.config.get("pass_keyword", "PASS")
+        timeout = self.config.get("timeout", 300)
 
         # Resolve agent command from agents.yaml with caching
         agents_path = Path.home() / ".loom" / "agents.yaml"
@@ -27,7 +28,13 @@ class AgentNode(BaseNode):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                err_msg = f"Agent timed out after {timeout}s: {agent_name}"
+                return False, err_msg, state
         except FileNotFoundError as exc:
             # Agent binary not found — surface clearly
             err_msg = f"Agent binary not found: {exc.filename}"

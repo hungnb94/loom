@@ -13,7 +13,7 @@ class ShellNode(BaseNode):
     async def run(self, state: dict) -> tuple[bool, str, dict]:
         commands = self.config.get("commands", [])
         timeout = self.config.get("timeout", self.DEFAULT_TIMEOUT)
-        outputs = []
+        outputs: list[str] = []
         for cmd_template in commands:
             cmd = self.render(cmd_template, state)
             try:
@@ -29,7 +29,13 @@ class ShellNode(BaseNode):
             except asyncio.TimeoutError:
                 outputs.append(f"Command timed out after {timeout}s: {cmd}")
                 return False, "\n".join(outputs), state
-            stdout, stderr = await proc.communicate()
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                outputs.append(f"Command timed out after {timeout}s: {cmd}")
+                return False, "\n".join(outputs), state
             outputs.append(stdout.decode("utf-8", errors="replace") + stderr.decode("utf-8", errors="replace"))
             if proc.returncode != 0:
                 return False, "\n".join(outputs), state

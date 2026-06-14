@@ -1,10 +1,13 @@
 from pathlib import Path
-from jinja2 import Template, TemplateSyntaxError
+from jinja2 import Environment, BaseLoader, TemplateSyntaxError
 import yaml
 
 from loom.graph import EDGE_KEY_NAMES
 
 VALID_TYPES = {"agent", "shell", "condition", "subflow", "log", "parallel"}
+
+# Module-level Jinja2 environment for syntax validation (no autoescape needed for config).
+_JINJA_ENV = Environment(loader=BaseLoader(), autoescape=False)
 
 
 def load_pipeline(path: Path) -> dict:
@@ -96,7 +99,7 @@ def validate_pipeline(config: dict) -> None:
             for val in values_to_check:
                 if "{{" in val or "{%" in val:
                     try:
-                        Template(val)
+                        _JINJA_ENV.from_string(val)
                     except TemplateSyntaxError as e:
                         errors.append(f"step '{name}': field '{field_key}' has invalid Jinja2: {e}")
 

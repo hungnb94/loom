@@ -62,14 +62,14 @@ class LoomTUI:
 
         return Panel(table, title="Loom")
 
-    def run_live(self, refresh_per_second: int = 4) -> None:
+    async def run_live(self, refresh_per_second: int = 4) -> None:
         """Run a live-updating TUI display (blocks until interrupted)."""
-        import time
+        import asyncio
         with Live(self.render(), console=self.console,
                   refresh_per_second=refresh_per_second) as live:
             try:
                 while True:
                     live.update(self.render())
-                    time.sleep(1.0 / refresh_per_second)
+                    await asyncio.sleep(1.0 / refresh_per_second)
             except KeyboardInterrupt:
                 pass
