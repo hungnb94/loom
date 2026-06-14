@@ -8,6 +8,11 @@ from loom.nodes.base import BaseNode
 class ShellNode(BaseNode):
     """Execute shell commands sequentially, stopping on first failure.
     Supports configurable timeout per command (default: 300s).
+
+    Security note: Commands are Jinja2-rendered then executed via
+    ``subprocess_shell``. Pipeline YAML is developer-authored and trusted.
+    User-supplied variables (e.g. ``{{requirement}}``) are interpolated
+    directly — never pass untrusted input into shell commands.
     """
 
     DEFAULT_TIMEOUT = 300

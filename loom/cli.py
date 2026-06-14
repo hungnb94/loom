@@ -66,9 +66,6 @@ def run(
     config = load_pipeline(pipeline_path)
     executor = GraphExecutor(config)
 
-    if state.current_node is None:
-        state.current_node = config["entry"]
-
     tui = None
     if not no_tui and not quiet:
         tui = LoomTUI()

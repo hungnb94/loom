@@ -1,9 +1,6 @@
 from typing import Any
 from loom.jinja_env import JINJA_ENV
 
-# Re-export for backward compatibility (other modules import from here)
-_JINJA_ENV = JINJA_ENV
-
 
 class BaseNode:
     def __init__(self, name: str, config: dict):
@@ -31,4 +28,4 @@ class BaseNode:
         """
         if "{{" not in template_str and "{%" not in template_str:
             return template_str
-        return _JINJA_ENV.from_string(template_str).render(**state)
+        return JINJA_ENV.from_string(template_str).render(**state)

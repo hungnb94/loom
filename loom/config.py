@@ -87,6 +87,16 @@ def validate_pipeline(config: dict) -> None:
         elif node_type == "parallel":
             if "branches" not in step:
                 errors.append(f"step '{name}' (parallel): missing 'branches'")
+            else:
+                # Validate branch edge references
+                for i, branch in enumerate(step["branches"]):
+                    for bkey in ("next", "on_pass"):
+                        btarget = branch.get(bkey)
+                        if btarget and btarget not in all_nodes:
+                            errors.append(
+                                f"step '{name}' (parallel) branch {i}: "
+                                f"{bkey}='{btarget}' references non-existent node"
+                            )
 
         # Jinja2 syntax check on string/list fields
         for field_key, field_val in step.items():

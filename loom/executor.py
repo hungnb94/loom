@@ -3,18 +3,20 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 from typing import Any
+from typing import TYPE_CHECKING
 
 from loom.state import PipelineState
 from loom.registry import NODE_REGISTRY
-from loom.tui import LoomTUI
+
+if TYPE_CHECKING:
+    from loom.tui import LoomTUI
 
 
 class GraphExecutor:
-    def __init__(self, config: dict, agents_path: Path | None = None, state_path: Path | None = None):
+    def __init__(self, config: dict, state_path: Path | None = None):
         self.config = config
         self.entry = config["entry"]
         self.steps = config["steps"]
-        self.agents_path = agents_path
         self._state_path = state_path or Path("pipeline.state")
 
     def _create_node(self, name: str):
