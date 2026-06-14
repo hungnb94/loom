@@ -27,26 +27,6 @@
           }
         ]
       }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/logger.js"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/logger.js"
-          }
-        ]
-      }
     ]
   }
 }
