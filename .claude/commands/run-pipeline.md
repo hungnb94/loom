@@ -38,6 +38,8 @@ Write `.claude/pipeline.state`:
 
 For each step, starting from `entry`:
 
+**Check max_visits first** — read `visit_counts` from state. If `max_visits` is set for this step and `visit_counts[step_name] >= max_visits`, stop and report error to user.
+
 **Render the prompt** — replace `{{variable}}` in the step's prompt with values from `shared_state`.
 
 **Execute based on type:**
@@ -58,9 +60,7 @@ For each step, starting from `entry`:
 - If `next` exists (unconditional) → next = `next`
 - If none → pipeline complete
 
-**Check max_visits** — if `max_visits` is set and this step has been visited that many times, stop and report error.
-
-**Update state after each step** using the Bash tool:
+**Update state after each step** using the Bash tool. Replace `<current_step>`, `<next_step>`, and `<output>` with the actual step name, next step name, and the full captured output text:
 
 ```bash
 python3 -c "
@@ -70,6 +70,8 @@ p = Path('.claude/pipeline.state')
 s = json.loads(p.read_text())
 s['completed_steps'].append('<current_step>')
 s['current_step'] = '<next_step>'
+s.setdefault('visit_counts', {})
+s['visit_counts']['<current_step>'] = s['visit_counts'].get('<current_step>', 0) + 1
 s['shared_state']['<current_step>_output'] = '''<output>'''
 p.write_text(json.dumps(s, indent=2))
 "
