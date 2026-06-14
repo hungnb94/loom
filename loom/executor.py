@@ -1,22 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 from pathlib import Path
 from typing import Any
-from loom.state import PipelineState
-from loom.nodes.shell import ShellNode
-from loom.nodes.agent import AgentNode
-from loom.nodes.condition import ConditionNode
-from loom.nodes.subflow import SubflowNode
-from loom.nodes.log import LogNode
-from loom.nodes.parallel import ParallelNode
 
-NODE_REGISTRY = {
-    "agent": AgentNode,
-    "shell": ShellNode,
-    "condition": ConditionNode,
-    "subflow": SubflowNode,
-    "log": LogNode,
-    "parallel": ParallelNode,
-}
+from loom.state import PipelineState
+from loom.registry import NODE_REGISTRY
+from loom.tui import LoomTUI
 
 
 class GraphExecutor:
@@ -53,7 +43,7 @@ class GraphExecutor:
         if output:
             tui.update_streaming(node, output)
 
-    async def run(self, state: PipelineState, tui=None, quiet: bool = False) -> PipelineState:
+    async def run(self, state: PipelineState, tui: LoomTUI | None = None, quiet: bool = False) -> PipelineState:
         current = state.current_node or self.entry
         visit_counts: dict[str, int] = dict(state.visit_counts)
         shared_state: dict[str, Any] = dict(state.shared_state)

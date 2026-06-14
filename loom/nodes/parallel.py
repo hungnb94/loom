@@ -1,3 +1,5 @@
+from typing import Any
+
 import asyncio
 from loom.nodes.base import BaseNode
 
@@ -9,9 +11,9 @@ class ParallelNode(BaseNode):
     ``{branch_name}_output`` in the shared state.
     """
 
-    async def run(self, state: dict) -> tuple[bool, str, dict]:
-        # Late import to avoid circular dependency
-        from loom.executor import NODE_REGISTRY
+    async def run(self, state: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
+        # Late import to break circular dependency (registry → parallel → registry)
+        from loom.registry import NODE_REGISTRY
 
         branches = self.config.get("branches", [])
         if not branches:

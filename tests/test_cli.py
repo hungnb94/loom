@@ -1,3 +1,4 @@
+from pathlib import Path
 from typer.testing import CliRunner
 from loom.cli import app
 
@@ -31,17 +32,11 @@ def test_cli_status_no_state():
 
 def test_cli_agents_no_config():
     """Agents should fail when no agents.yaml exists."""
-    import os
-    agents_path = os.path.expanduser("~/.loom/agents.yaml")
-    # Temporarily rename if exists
-    backup = None
-    if os.path.exists(agents_path):
-        backup = agents_path + ".backup"
-        os.rename(agents_path, backup)
-    try:
-        result = runner.invoke(app, ["agents"])
-        assert result.exit_code == 1
-        assert "No agents.yaml" in result.output
-    finally:
-        if backup and os.path.exists(backup):
-            os.rename(backup, agents_path)
+    from unittest.mock import patch
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch("pathlib.Path.home", return_value=Path(tmp)):
+            result = runner.invoke(app, ["agents"])
+            assert result.exit_code == 1
+            assert "No agents.yaml" in result.output

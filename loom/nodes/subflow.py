@@ -1,3 +1,5 @@
+from typing import Any
+
 from loom.nodes.base import BaseNode
 
 
@@ -8,7 +10,7 @@ class SubflowNode(BaseNode):
     pipeline file. For V1 it returns success immediately as a stub.
     """
 
-    async def run(self, state: dict) -> tuple[bool, str, dict]:
+    async def run(self, state: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
         pipeline_path = self.config.get("pipeline")
         if not pipeline_path:
             return False, "No pipeline specified", state

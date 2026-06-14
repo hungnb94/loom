@@ -1,3 +1,5 @@
+from typing import Any
+
 import asyncio
 from pathlib import Path
 from loom.nodes.base import BaseNode
@@ -6,7 +8,7 @@ from loom.nodes.base import BaseNode
 class LogNode(BaseNode):
     """Write a Jinja2-rendered log message to a file."""
 
-    async def run(self, state: dict) -> tuple[bool, str, dict]:
+    async def run(self, state: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
         message = self.render(self.config.get("message", ""), state)
         file_path = Path(self.config.get("file", "loom.log"))
         loop = asyncio.get_running_loop()

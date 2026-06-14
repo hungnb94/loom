@@ -1,3 +1,5 @@
+from typing import Any
+
 import ast
 import operator
 from loom.nodes.base import BaseNode
@@ -39,7 +41,7 @@ class ConditionNode(BaseNode):
     comparisons and arithmetic — no raw eval() is used.
     """
 
-    async def run(self, state: dict) -> tuple[bool, str, dict]:
+    async def run(self, state: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
         rendered = self.render(self.config.get("expression", ""), state)
         try:
             # Try literal_eval first for simple values (True, False, numbers, strings)

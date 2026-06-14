@@ -1,3 +1,5 @@
+from typing import Any
+
 import asyncio
 from pathlib import Path
 from loom.nodes.base import BaseNode
@@ -12,7 +14,7 @@ _agents_path_mtime: float | None = None
 class AgentNode(BaseNode):
     """Spawn an agent subprocess and evaluate its output for pass/fail."""
 
-    async def run(self, state: dict) -> tuple[bool, str, dict]:
+    async def run(self, state: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
         prompt = self.render(self.config.get("prompt", ""), state)
         agent_name = self.config.get("agent", "echo")
         pass_keyword = self.config.get("pass_keyword", "PASS")

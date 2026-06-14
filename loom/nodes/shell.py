@@ -1,3 +1,5 @@
+from typing import Any
+
 import asyncio
 from pathlib import Path
 from loom.nodes.base import BaseNode
@@ -10,7 +12,7 @@ class ShellNode(BaseNode):
 
     DEFAULT_TIMEOUT = 300
 
-    async def run(self, state: dict) -> tuple[bool, str, dict]:
+    async def run(self, state: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
         commands = self.config.get("commands", [])
         timeout = self.config.get("timeout", self.DEFAULT_TIMEOUT)
         outputs: list[str] = []
