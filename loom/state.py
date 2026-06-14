@@ -2,6 +2,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 import json
 import os
+import tempfile
 from typing import Any
 
 try:
@@ -30,20 +31,23 @@ class PipelineState:
     shared_state: dict[str, Any]
 
     def save(self, path: Path) -> None:
-        """Atomic save with advisory file locking to prevent corruption."""
+        """Atomic save using unique temp file + os.replace to prevent corruption."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_path = path.with_suffix(".tmp")
-        tmp_path.write_text(
-            json.dumps(asdict(self), indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        # Unique tmp file per invocation prevents concurrent-write corruption.
+        # Same directory ensures same filesystem for atomic os.replace.
+        tmp_fd, tmp_path_str = tempfile.mkstemp(
+            dir=str(path.parent), suffix=".tmp"
         )
-        # Advisory lock during atomic rename (no-op on Windows)
-        with open(tmp_path, "r+") as f:
-            if _lock_exclusive:
-                _lock_exclusive(f)
-            os.replace(tmp_path, path)
-            if _unlock:
-                _unlock(f)
+        try:
+            with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                json.dump(asdict(self), f, indent=2, ensure_ascii=False)
+            os.replace(tmp_path_str, path)
+        except BaseException:
+            try:
+                os.unlink(tmp_path_str)
+            except OSError:
+                pass
+            raise
 
     @classmethod
     def load(cls, path: Path) -> "PipelineState":

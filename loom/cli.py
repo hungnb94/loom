@@ -7,7 +7,7 @@ from typing import Optional
 import typer
 from loom.executor import GraphExecutor
 from loom.state import PipelineState
-from loom.config import load_pipeline, validate_pipeline
+from loom.config import load_pipeline
 from loom.tui import LoomTUI
 
 app = typer.Typer(help="Loom -- Graph-based AI agent pipeline orchestrator")
@@ -196,11 +196,7 @@ def validate(
         raise typer.Exit(1)
 
     try:
-        import yaml
-
-        with open(pipeline_path) as f:
-            config = yaml.safe_load(f)
-        validate_pipeline(config)
+        config = load_pipeline(pipeline_path)
 
         if json_output:
             typer.echo(json.dumps({"valid": True, "file": str(pipeline_path)}))

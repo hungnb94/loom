@@ -22,7 +22,11 @@ def load_agents(path: Path) -> dict:
 
 
 def validate_pipeline(config: dict) -> None:
-    """Full pipeline validation. Collects ALL errors, raises once."""
+    """Full pipeline validation. Collects all errors, raises once.
+
+    Structural checks (missing steps, non-dict steps) raise early because
+    per-node validation cannot proceed without a valid steps dict.
+    """
     errors = []
 
     # ── Structure ──
